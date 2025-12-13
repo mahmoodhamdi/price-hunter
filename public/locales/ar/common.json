@@ -1,0 +1,168 @@
+{
+  "app": {
+    "name": "صياد الأسعار",
+    "tagline": "اعثر على أفضل الأسعار في جميع المتاجر"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "deals": "أفضل العروض",
+    "trending": "الأكثر بحثاً",
+    "stores": "المتاجر",
+    "dashboard": "لوحة التحكم",
+    "login": "دخول",
+    "register": "تسجيل",
+    "logout": "خروج"
+  },
+  "search": {
+    "placeholder": "ابحث عن منتج، الصق رابط، أو امسح الباركود...",
+    "button": "بحث",
+    "scanning": "جاري المسح...",
+    "noResults": "لم يتم العثور على منتجات",
+    "resultsCount": "تم العثور على {count} منتج",
+    "recentSearches": "عمليات البحث الأخيرة"
+  },
+  "product": {
+    "lowestPrice": "أقل سعر",
+    "highestPrice": "أعلى سعر",
+    "averagePrice": "متوسط السعر",
+    "priceHistory": "تاريخ الأسعار",
+    "compare": "قارن الأسعار",
+    "inStock": "متوفر",
+    "outOfStock": "غير متوفر",
+    "discount": "خصم {percent}%",
+    "shipping": "الشحن",
+    "freeShipping": "شحن مجاني",
+    "visitStore": "زيارة المتجر",
+    "addToWishlist": "أضف للمفضلة",
+    "removeFromWishlist": "إزالة من المفضلة",
+    "setAlert": "تنبيه السعر",
+    "reviews": "{count} تقييم",
+    "noReviews": "لا توجد تقييمات بعد"
+  },
+  "comparison": {
+    "title": "مقارنة الأسعار",
+    "store": "المتجر",
+    "price": "السعر",
+    "originalPrice": "السعر الأصلي",
+    "savings": "توفر",
+    "lastUpdated": "آخر تحديث",
+    "sortBy": "ترتيب حسب",
+    "cheapest": "الأرخص أولاً",
+    "rating": "الأعلى تقييماً",
+    "noComparisons": "لا توجد مقارنات أسعار متاحة"
+  },
+  "currency": {
+    "SAR": "ريال سعودي",
+    "EGP": "جنيه مصري",
+    "AED": "درهم إماراتي",
+    "KWD": "دينار كويتي",
+    "USD": "دولار أمريكي",
+    "showIn": "عرض الأسعار بـ"
+  },
+  "alerts": {
+    "title": "تنبيهات الأسعار",
+    "create": "إنشاء تنبيه",
+    "targetPrice": "السعر المستهدف",
+    "currentPrice": "السعر الحالي",
+    "notify": "أبلغني عبر",
+    "email": "البريد الإلكتروني",
+    "telegram": "تيليجرام",
+    "push": "إشعار فوري",
+    "active": "نشط",
+    "triggered": "تم التنبيه",
+    "noAlerts": "لا توجد تنبيهات بعد",
+    "alertCreated": "تم إنشاء تنبيه السعر بنجاح",
+    "alertDeleted": "تم حذف تنبيه السعر"
+  },
+  "wishlist": {
+    "title": "قائمة المفضلة",
+    "empty": "قائمة المفضلة فارغة",
+    "added": "تمت الإضافة للمفضلة",
+    "removed": "تمت الإزالة من المفضلة"
+  },
+  "stores": {
+    "title": "المتاجر المدعومة",
+    "products": "{count} منتج",
+    "viewAll": "عرض الكل",
+    "allStores": "جميع المتاجر"
+  },
+  "countries": {
+    "SA": "السعودية",
+    "EG": "مصر",
+    "AE": "الإمارات",
+    "KW": "الكويت",
+    "selectCountry": "اختر الدولة"
+  },
+  "auth": {
+    "login": "دخول",
+    "register": "تسجيل",
+    "logout": "خروج",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "name": "الاسم الكامل",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "noAccount": "ليس لديك حساب؟",
+    "hasAccount": "لديك حساب بالفعل؟",
+    "loginSuccess": "تم تسجيل الدخول بنجاح",
+    "registerSuccess": "تم إنشاء الحساب بنجاح",
+    "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "overview": "نظرة عامة",
+    "wishlist": "المفضلة",
+    "alerts": "تنبيهات الأسعار",
+    "history": "سجل البحث",
+    "settings": "الإعدادات",
+    "totalSaved": "إجمالي التوفير",
+    "activeAlerts": "التنبيهات النشطة",
+    "wishlistItems": "عناصر المفضلة"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "profile": "الملف الشخصي",
+    "notifications": "الإشعارات",
+    "language": "اللغة",
+    "currency": "العملة",
+    "country": "الدولة",
+    "theme": "المظهر",
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "تلقائي",
+    "saveChanges": "حفظ التغييرات",
+    "saved": "تم حفظ الإعدادات"
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "حدث خطأ ما",
+    "retry": "إعادة المحاولة",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "share": "مشاركة",
+    "copy": "نسخ الرابط",
+    "copied": "تم النسخ!",
+    "viewAll": "عرض الكل",
+    "showMore": "عرض المزيد",
+    "showLess": "عرض أقل",
+    "from": "من",
+    "to": "إلى",
+    "all": "الكل"
+  },
+  "errors": {
+    "notFound": "الصفحة غير موجودة",
+    "serverError": "خطأ في الخادم",
+    "networkError": "خطأ في الشبكة",
+    "unauthorized": "يرجى تسجيل الدخول للمتابعة",
+    "forbidden": "الوصول مرفوض"
+  },
+  "footer": {
+    "about": "عن الموقع",
+    "contact": "اتصل بنا",
+    "privacy": "سياسة الخصوصية",
+    "terms": "شروط الخدمة",
+    "copyright": "© {year} صياد الأسعار. جميع الحقوق محفوظة."
+  }
+}
