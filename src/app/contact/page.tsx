@@ -32,7 +32,7 @@ export default function ContactPage() {
               <div className="text-6xl mb-4">✅</div>
               <h2 className="text-2xl font-semibold mb-2">Thank you!</h2>
               <p className="text-muted-foreground">
-                We've received your message and will get back to you soon.
+                We&apos;ve received your message and will get back to you soon.
               </p>
             </CardContent>
           </Card>
