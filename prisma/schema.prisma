@@ -31,8 +31,10 @@ model User {
   accounts Account[]
   sessions Session[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  affiliateClicks      AffiliateClick[]
+  cashbackTransactions CashbackTransaction[]
 
   @@map("users")
 }
@@ -112,7 +114,12 @@ model Store {
   isActive     Boolean  @default(true)
   scrapeConfig Json? // CSS selectors, API endpoints
 
-  products StoreProduct[]
+  affiliateTag  String?
+  affiliateRate Decimal? @db.Decimal(5, 2)
+
+  products        StoreProduct[]
+  coupons         Coupon[]
+  affiliateClicks AffiliateClick[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -131,10 +138,11 @@ model Product {
   image       String?
   description String? @db.Text
 
-  storeProducts StoreProduct[]
-  wishlist      Wishlist[]
-  alerts        PriceAlert[]
-  searches      SearchHistory[]
+  storeProducts   StoreProduct[]
+  wishlist        Wishlist[]
+  alerts          PriceAlert[]
+  searches        SearchHistory[]
+  affiliateClicks AffiliateClick[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -266,10 +274,10 @@ model ExchangeRate {
 // ============================================
 
 model ScrapeJob {
-  id        String     @id @default(cuid())
+  id        String    @id @default(cuid())
   storeId   String?
   productId String?
-  status    JobStatus  @default(PENDING)
+  status    JobStatus @default(PENDING)
   type      JobType
 
   startedAt      DateTime?
@@ -295,4 +303,86 @@ enum JobType {
   PRODUCT_UPDATE
   PRICE_CHECK
   EXCHANGE_RATE
+}
+
+// ============================================
+// Affiliate & Coupons
+// ============================================
+
+model AffiliateClick {
+  id        String  @id @default(cuid())
+  userId    String?
+  storeId   String
+  productId String?
+
+  url       String
+  referrer  String?
+  userAgent String?
+  ipHash    String // Hashed for privacy
+  converted Boolean  @default(false)
+  revenue   Decimal? @db.Decimal(10, 2)
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  store   Store    @relation(fields: [storeId], references: [id])
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([storeId, createdAt])
+  @@map("affiliate_clicks")
+}
+
+model Coupon {
+  id      String @id @default(cuid())
+  storeId String
+  store   Store  @relation(fields: [storeId], references: [id])
+
+  code          String
+  description   String
+  descriptionAr String?
+  discount      String // "10% OFF", "50 SAR OFF"
+  minPurchase   Decimal? @db.Decimal(10, 2)
+  maxDiscount   Decimal? @db.Decimal(10, 2)
+
+  startDate  DateTime?
+  endDate    DateTime?
+  isActive   Boolean   @default(true)
+  isVerified Boolean   @default(false)
+  isFeatured Boolean   @default(false)
+  usageCount Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([storeId, isActive])
+  @@map("coupons")
+}
+
+// ============================================
+// Cashback System
+// ============================================
+
+model CashbackTransaction {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  affiliateClickId String?
+  amount           Decimal        @db.Decimal(10, 2)
+  currency         Currency
+  status           CashbackStatus @default(PENDING)
+
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId, status])
+  @@map("cashback_transactions")
+}
+
+enum CashbackStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
 }

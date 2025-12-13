@@ -22,7 +22,7 @@ export default async function AboutPage() {
             <h2 className="text-2xl font-semibold mb-4">Our Mission</h2>
             <p className="text-lg text-muted-foreground mb-4">
               Price Hunter was created with one goal in mind: to help shoppers in the Middle East
-              find the best deals across multiple online stores. We believe everyone deserves
+              find the best deals across multiple online stores. We believe everyone&apos;s right to
               access to transparent pricing information.
             </p>
           </section>
@@ -40,7 +40,7 @@ export default async function AboutPage() {
               <div className="p-6 rounded-lg border bg-card">
                 <h3 className="font-semibold mb-2">Price History</h3>
                 <p className="text-muted-foreground">
-                  Track how prices change over time to know if you're getting a good deal
+                  Track how prices change over time to know if you&apos;re getting a good deal
                   or should wait for a better price.
                 </p>
               </div>
@@ -105,7 +105,7 @@ export default async function AboutPage() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
             <p className="text-muted-foreground">
-              Have questions or suggestions? We'd love to hear from you!
+              Have questions or suggestions? We&apos;d love to hear from you!
               <br />
               Email: <a href="mailto:support@pricehunter.app" className="text-primary hover:underline">
                 support@pricehunter.app

@@ -78,7 +78,7 @@ export default function TermsPage() {
           To the maximum extent permitted by law:
         </p>
         <ul>
-          <li>We provide our service "as is" without warranties</li>
+          <li>We provide our service &quot;as is&quot; without warranties</li>
           <li>We are not liable for any indirect or consequential damages</li>
           <li>Our total liability is limited to the amount you paid us (if any)</li>
         </ul>
