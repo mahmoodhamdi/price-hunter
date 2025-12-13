@@ -1,0 +1,298 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Users & Auth
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  country       Country   @default(SA)
+  currency      Currency  @default(SAR)
+  telegramId    String?
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(USER)
+
+  wishlist Wishlist[]
+  alerts   PriceAlert[]
+  searches SearchHistory[]
+  accounts Account[]
+  sessions Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Country {
+  SA // Saudi Arabia
+  EG // Egypt
+  AE // UAE
+  KW // Kuwait
+}
+
+enum Currency {
+  SAR
+  EGP
+  AED
+  KWD
+  USD
+}
+
+// ============================================
+// Products & Stores
+// ============================================
+
+model Store {
+  id           String   @id @default(cuid())
+  name         String
+  nameAr       String
+  slug         String   @unique
+  domain       String   @unique
+  logo         String?
+  country      Country
+  currency     Currency
+  isActive     Boolean  @default(true)
+  scrapeConfig Json? // CSS selectors, API endpoints
+
+  products StoreProduct[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("stores")
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  name        String
+  nameAr      String?
+  slug        String  @unique
+  barcode     String? @unique
+  brand       String?
+  category    String?
+  image       String?
+  description String? @db.Text
+
+  storeProducts StoreProduct[]
+  wishlist      Wishlist[]
+  alerts        PriceAlert[]
+  searches      SearchHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([barcode])
+  @@map("products")
+}
+
+model StoreProduct {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  storeId   String
+  store     Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  url           String
+  price         Decimal  @db.Decimal(10, 2)
+  currency      Currency
+  priceUSD      Decimal  @db.Decimal(10, 2) // Normalized price
+  originalPrice Decimal? @db.Decimal(10, 2) // Before discount
+  discount      Int? // Percentage
+  inStock       Boolean  @default(true)
+  rating        Decimal? @db.Decimal(2, 1)
+  reviewCount   Int?
+
+  priceHistory PriceHistory[]
+
+  lastScraped DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([productId, storeId])
+  @@index([price])
+  @@index([priceUSD])
+  @@map("store_products")
+}
+
+model PriceHistory {
+  id             String       @id @default(cuid())
+  storeProductId String
+  storeProduct   StoreProduct @relation(fields: [storeProductId], references: [id], onDelete: Cascade)
+
+  price    Decimal  @db.Decimal(10, 2)
+  priceUSD Decimal  @db.Decimal(10, 2)
+  currency Currency
+
+  recordedAt DateTime @default(now())
+
+  @@index([storeProductId, recordedAt])
+  @@map("price_history")
+}
+
+// ============================================
+// User Features
+// ============================================
+
+model Wishlist {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@map("wishlists")
+}
+
+model PriceAlert {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  targetPrice Decimal   @db.Decimal(10, 2)
+  currency    Currency
+  isActive    Boolean   @default(true)
+  triggered   Boolean   @default(false)
+  triggeredAt DateTime?
+
+  notifyEmail    Boolean @default(true)
+  notifyTelegram Boolean @default(false)
+  notifyPush     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, triggered])
+  @@map("price_alerts")
+}
+
+model SearchHistory {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  query   String
+  results Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([query])
+  @@map("search_history")
+}
+
+// ============================================
+// Exchange Rates
+// ============================================
+
+model ExchangeRate {
+  id           String   @id @default(cuid())
+  fromCurrency Currency
+  toCurrency   Currency @default(USD)
+  rate         Decimal  @db.Decimal(10, 6)
+
+  updatedAt DateTime @default(now())
+
+  @@unique([fromCurrency, toCurrency])
+  @@map("exchange_rates")
+}
+
+// ============================================
+// Scrape Jobs
+// ============================================
+
+model ScrapeJob {
+  id        String     @id @default(cuid())
+  storeId   String?
+  productId String?
+  status    JobStatus  @default(PENDING)
+  type      JobType
+
+  startedAt      DateTime?
+  completedAt    DateTime?
+  error          String?   @db.Text
+  itemsProcessed Int       @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@map("scrape_jobs")
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum JobType {
+  FULL_SCRAPE
+  PRODUCT_UPDATE
+  PRICE_CHECK
+  EXCHANGE_RATE
+}

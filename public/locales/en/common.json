@@ -1,0 +1,168 @@
+{
+  "app": {
+    "name": "Price Hunter",
+    "tagline": "Find the best prices across all stores"
+  },
+  "nav": {
+    "home": "Home",
+    "deals": "Best Deals",
+    "trending": "Trending",
+    "stores": "Stores",
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  },
+  "search": {
+    "placeholder": "Search for a product, paste URL, or scan barcode...",
+    "button": "Search",
+    "scanning": "Scanning...",
+    "noResults": "No products found",
+    "resultsCount": "{count} products found",
+    "recentSearches": "Recent Searches"
+  },
+  "product": {
+    "lowestPrice": "Lowest Price",
+    "highestPrice": "Highest Price",
+    "averagePrice": "Average Price",
+    "priceHistory": "Price History",
+    "compare": "Compare Prices",
+    "inStock": "In Stock",
+    "outOfStock": "Out of Stock",
+    "discount": "{percent}% OFF",
+    "shipping": "Shipping",
+    "freeShipping": "Free Shipping",
+    "visitStore": "Visit Store",
+    "addToWishlist": "Add to Wishlist",
+    "removeFromWishlist": "Remove from Wishlist",
+    "setAlert": "Set Price Alert",
+    "reviews": "{count} reviews",
+    "noReviews": "No reviews yet"
+  },
+  "comparison": {
+    "title": "Price Comparison",
+    "store": "Store",
+    "price": "Price",
+    "originalPrice": "Original",
+    "savings": "You Save",
+    "lastUpdated": "Last Updated",
+    "sortBy": "Sort by",
+    "cheapest": "Cheapest First",
+    "rating": "Best Rating",
+    "noComparisons": "No price comparisons available"
+  },
+  "currency": {
+    "SAR": "Saudi Riyal",
+    "EGP": "Egyptian Pound",
+    "AED": "UAE Dirham",
+    "KWD": "Kuwaiti Dinar",
+    "USD": "US Dollar",
+    "showIn": "Show prices in"
+  },
+  "alerts": {
+    "title": "Price Alerts",
+    "create": "Create Alert",
+    "targetPrice": "Target Price",
+    "currentPrice": "Current Price",
+    "notify": "Notify me via",
+    "email": "Email",
+    "telegram": "Telegram",
+    "push": "Push Notification",
+    "active": "Active",
+    "triggered": "Triggered",
+    "noAlerts": "No price alerts yet",
+    "alertCreated": "Price alert created successfully",
+    "alertDeleted": "Price alert deleted"
+  },
+  "wishlist": {
+    "title": "My Wishlist",
+    "empty": "Your wishlist is empty",
+    "added": "Added to wishlist",
+    "removed": "Removed from wishlist"
+  },
+  "stores": {
+    "title": "Supported Stores",
+    "products": "{count} products",
+    "viewAll": "View All",
+    "allStores": "All Stores"
+  },
+  "countries": {
+    "SA": "Saudi Arabia",
+    "EG": "Egypt",
+    "AE": "UAE",
+    "KW": "Kuwait",
+    "selectCountry": "Select Country"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "name": "Full Name",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "loginSuccess": "Logged in successfully",
+    "registerSuccess": "Account created successfully",
+    "invalidCredentials": "Invalid email or password"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "overview": "Overview",
+    "wishlist": "Wishlist",
+    "alerts": "Price Alerts",
+    "history": "Search History",
+    "settings": "Settings",
+    "totalSaved": "Total Saved",
+    "activeAlerts": "Active Alerts",
+    "wishlistItems": "Wishlist Items"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "language": "Language",
+    "currency": "Currency",
+    "country": "Country",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "saveChanges": "Save Changes",
+    "saved": "Settings saved"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "share": "Share",
+    "copy": "Copy Link",
+    "copied": "Copied!",
+    "viewAll": "View All",
+    "showMore": "Show More",
+    "showLess": "Show Less",
+    "from": "From",
+    "to": "To",
+    "all": "All"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "serverError": "Server error",
+    "networkError": "Network error",
+    "unauthorized": "Please login to continue",
+    "forbidden": "Access denied"
+  },
+  "footer": {
+    "about": "About",
+    "contact": "Contact",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "copyright": "© {year} Price Hunter. All rights reserved."
+  }
+}
