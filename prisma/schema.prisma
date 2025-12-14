@@ -43,6 +43,8 @@ model User {
   affiliateClicks      AffiliateClick[]
   cashbackTransactions CashbackTransaction[]
   stockNotifications   StockNotification[]
+  storeReviews         StoreReview[]
+  reviewHelpful        ReviewHelpful[]
 
   @@map("users")
 }
@@ -128,6 +130,7 @@ model Store {
   products        StoreProduct[]
   coupons         Coupon[]
   affiliateClicks AffiliateClick[]
+  storeReviews    StoreReview[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -434,4 +437,51 @@ model StockHistory {
 
   @@index([storeProductId, checkedAt])
   @@map("stock_history")
+}
+
+// ============================================
+// Store Reviews
+// ============================================
+
+model StoreReview {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId String
+  store   Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  rating  Int // 1-5
+  title   String
+  content String @db.Text
+  pros    Json   @default("[]") // String array
+  cons    Json   @default("[]") // String array
+
+  deliveryRating Int? // 1-5
+  priceRating    Int? // 1-5
+  serviceRating  Int? // 1-5
+
+  verifiedPurchase Boolean @default(false)
+  helpfulCount     Int     @default(0)
+
+  helpfulMarks ReviewHelpful[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, storeId])
+  @@index([storeId, rating])
+  @@map("store_reviews")
+}
+
+model ReviewHelpful {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewId String
+  review   StoreReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, reviewId])
+  @@map("review_helpful")
 }
