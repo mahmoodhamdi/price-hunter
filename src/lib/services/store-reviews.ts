@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { sanitizeText, sanitizeTextArray } from "@/lib/security";
 
 export interface StoreReview {
   id: string;
@@ -119,6 +120,24 @@ export async function getStoreReviews(
 export async function createStoreReview(
   data: StoreReviewCreate
 ): Promise<StoreReview | null> {
+  // SECURITY: Sanitize user input to prevent XSS
+  const sanitizedTitle = sanitizeText(data.title);
+  const sanitizedContent = sanitizeText(data.content);
+  const sanitizedPros = data.pros ? sanitizeTextArray(data.pros) : [];
+  const sanitizedCons = data.cons ? sanitizeTextArray(data.cons) : [];
+
+  // Validate rating bounds
+  const rating = Math.min(5, Math.max(1, Math.round(data.rating)));
+  const deliveryRating = data.deliveryRating
+    ? Math.min(5, Math.max(1, Math.round(data.deliveryRating)))
+    : undefined;
+  const priceRating = data.priceRating
+    ? Math.min(5, Math.max(1, Math.round(data.priceRating)))
+    : undefined;
+  const serviceRating = data.serviceRating
+    ? Math.min(5, Math.max(1, Math.round(data.serviceRating)))
+    : undefined;
+
   // Check if store exists
   const store = await prisma.store.findUnique({
     where: { id: data.storeId },
@@ -143,14 +162,14 @@ export async function createStoreReview(
     const updated = await prisma.storeReview.update({
       where: { id: existing.id },
       data: {
-        rating: data.rating,
-        title: data.title,
-        content: data.content,
-        pros: data.pros || [],
-        cons: data.cons || [],
-        deliveryRating: data.deliveryRating,
-        priceRating: data.priceRating,
-        serviceRating: data.serviceRating,
+        rating,
+        title: sanitizedTitle,
+        content: sanitizedContent,
+        pros: sanitizedPros,
+        cons: sanitizedCons,
+        deliveryRating,
+        priceRating,
+        serviceRating,
       },
       include: {
         user: { select: { name: true } },
@@ -186,14 +205,14 @@ export async function createStoreReview(
     data: {
       userId: data.userId,
       storeId: data.storeId,
-      rating: data.rating,
-      title: data.title,
-      content: data.content,
-      pros: data.pros || [],
-      cons: data.cons || [],
-      deliveryRating: data.deliveryRating,
-      priceRating: data.priceRating,
-      serviceRating: data.serviceRating,
+      rating,
+      title: sanitizedTitle,
+      content: sanitizedContent,
+      pros: sanitizedPros,
+      cons: sanitizedCons,
+      deliveryRating,
+      priceRating,
+      serviceRating,
       verifiedPurchase,
     },
     include: {
@@ -265,38 +284,35 @@ export async function markReviewHelpful(
   userId: string,
   reviewId: string
 ): Promise<{ success: boolean; helpfulCount: number }> {
-  // Check if user already marked this review
-  const existing = await prisma.reviewHelpful.findUnique({
-    where: {
-      userId_reviewId: {
-        userId,
-        reviewId,
-      },
-    },
-  });
+  try {
+    // Use a transaction with upsert-like pattern to prevent race conditions
+    // We try to create the mark - if it fails due to unique constraint, we know it exists
+    const result = await prisma.$transaction(async (tx) => {
+      // Try to create the helpful mark
+      // This will throw if the unique constraint is violated
+      await tx.reviewHelpful.create({
+        data: { userId, reviewId },
+      });
 
-  if (existing) {
+      // Increment the count atomically
+      const review = await tx.storeReview.update({
+        where: { id: reviewId },
+        data: { helpfulCount: { increment: 1 } },
+        select: { helpfulCount: true },
+      });
+
+      return { success: true, helpfulCount: review.helpfulCount };
+    });
+
+    return result;
+  } catch (error) {
+    // Unique constraint violation means user already marked this review
+    // Return current count without error
     return {
       success: false,
       helpfulCount: await getReviewHelpfulCount(reviewId),
     };
   }
-
-  // Create helpful mark and increment count
-  await prisma.$transaction([
-    prisma.reviewHelpful.create({
-      data: { userId, reviewId },
-    }),
-    prisma.storeReview.update({
-      where: { id: reviewId },
-      data: { helpfulCount: { increment: 1 } },
-    }),
-  ]);
-
-  return {
-    success: true,
-    helpfulCount: await getReviewHelpfulCount(reviewId),
-  };
 }
 
 async function getReviewHelpfulCount(reviewId: string): Promise<number> {
@@ -537,8 +553,12 @@ export async function reportReview(
     return false;
   }
 
+  // SECURITY: Sanitize reason to prevent XSS
+  const sanitizedReason = sanitizeText(reason);
+
   // In a real implementation, this would create a report entry
-  console.log(`Review ${reviewId} reported by ${userId}: ${reason}`);
+  // TODO: Create proper report model and save to database
+  console.log(`Review ${reviewId} reported by ${userId}`);
 
   return true;
 }

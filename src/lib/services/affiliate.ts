@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import { isAllowedScrapeDomain } from "@/lib/security";
 
 // Affiliate tag configurations
 const AFFILIATE_CONFIGS: Record<string, { param: string; format: (url: string, tag: string) => string }> = {
@@ -65,11 +66,17 @@ function addDefaultTracking(url: string): string {
 
 /**
  * Generate affiliate URL for a store product
+ * @throws Error if URL is not from an allowed domain
  */
 export async function generateAffiliateUrl(
   storeSlug: string,
   originalUrl: string
 ): Promise<string> {
+  // SECURITY: Validate URL is from an allowed domain to prevent open redirects
+  if (!isAllowedScrapeDomain(originalUrl)) {
+    throw new Error("URL domain not allowed for affiliate redirect");
+  }
+
   const store = await prisma.store.findUnique({
     where: { slug: storeSlug },
     select: { affiliateTag: true },

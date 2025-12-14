@@ -26,11 +26,13 @@ model User {
   role          Role      @default(USER)
 
   // Password reset
-  resetToken       String?
+  resetToken       String?   @unique
   resetTokenExpiry DateTime?
 
   // Browser extension
   extensionApiKey String? @unique
+
+  @@index([resetTokenExpiry])
 
   wishlist Wishlist[]
   alerts   PriceAlert[]
@@ -137,6 +139,7 @@ model Store {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([country, isActive])
   @@map("stores")
 }
 
@@ -195,6 +198,8 @@ model StoreProduct {
   @@unique([productId, storeId])
   @@index([price])
   @@index([priceUSD])
+  @@index([url])
+  @@index([storeId, inStock])
   @@map("store_products")
 }
 
@@ -230,6 +235,7 @@ model Wishlist {
   createdAt DateTime @default(now())
 
   @@unique([userId, productId])
+  @@index([userId])
   @@map("wishlists")
 }
 
@@ -254,6 +260,7 @@ model PriceAlert {
   updatedAt DateTime @updatedAt
 
   @@index([isActive, triggered])
+  @@index([userId, isActive])
   @@map("price_alerts")
 }
 
@@ -349,6 +356,8 @@ model AffiliateClick {
   createdAt DateTime @default(now())
 
   @@index([storeId, createdAt])
+  @@index([userId])
+  @@index([converted])
   @@map("affiliate_clicks")
 }
 

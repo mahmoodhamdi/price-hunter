@@ -167,11 +167,16 @@ describe("Auth API Integration", () => {
     it("should reset password with valid token", async () => {
       const { prisma } = await import("@/lib/prisma");
       const { POST } = await import("@/app/api/auth/reset-password/route");
+      const { hashToken } = await import("@/lib/security");
+
+      // The token is hashed before comparison
+      const plainToken = "valid_token_abc123";
+      const hashedToken = hashToken(plainToken);
 
       vi.mocked(prisma.user.findFirst).mockResolvedValue({
         id: "user1",
         email: "test@example.com",
-        resetToken: "valid_token",
+        resetToken: hashedToken,
         resetTokenExpiry: new Date(Date.now() + 3600000),
       } as any);
 
@@ -180,8 +185,9 @@ describe("Auth API Integration", () => {
       const request = new NextRequest("http://localhost:3000/api/auth/reset-password", {
         method: "POST",
         body: JSON.stringify({
-          token: "valid_token",
-          password: "newpassword123",
+          token: plainToken,
+          // Password must meet strength requirements: uppercase, lowercase, number, 8+ chars
+          password: "NewPassword123",
         }),
       });
 
@@ -243,11 +249,16 @@ describe("Auth API Integration", () => {
     it("should clear reset token after successful reset", async () => {
       const { prisma } = await import("@/lib/prisma");
       const { POST } = await import("@/app/api/auth/reset-password/route");
+      const { hashToken } = await import("@/lib/security");
+
+      // The token is hashed before comparison
+      const plainToken = "valid_token_xyz789";
+      const hashedToken = hashToken(plainToken);
 
       vi.mocked(prisma.user.findFirst).mockResolvedValue({
         id: "user1",
         email: "test@example.com",
-        resetToken: "valid_token",
+        resetToken: hashedToken,
         resetTokenExpiry: new Date(Date.now() + 3600000),
       } as any);
 
@@ -256,8 +267,9 @@ describe("Auth API Integration", () => {
       const request = new NextRequest("http://localhost:3000/api/auth/reset-password", {
         method: "POST",
         body: JSON.stringify({
-          token: "valid_token",
-          password: "newpassword123",
+          token: plainToken,
+          // Password must meet strength requirements
+          password: "SecurePass123",
         }),
       });
 

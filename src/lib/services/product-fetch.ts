@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getScraperForStore, StoreSlug, ScrapedProduct } from "@/lib/scrapers";
 import { Currency, Country } from "@prisma/client";
 import { slugify } from "@/lib/utils";
+import { isAllowedScrapeDomain } from "@/lib/security";
 
 // Get active stores for a country
 export async function getActiveStoresForCountry(country: Country): Promise<string[]> {
@@ -317,6 +318,15 @@ export async function fetchProductFromUrl(url: string): Promise<{
   isNew: boolean;
   error?: string;
 }> {
+  // SECURITY: Validate URL is from an allowed domain to prevent SSRF
+  if (!isAllowedScrapeDomain(url)) {
+    return {
+      productId: null,
+      isNew: false,
+      error: "URL domain not allowed for scraping",
+    };
+  }
+
   const { scrapeProductFromUrl } = await import("@/lib/scrapers");
 
   try {

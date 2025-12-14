@@ -117,54 +117,13 @@ export async function addToWishlist(
 
   if (!product) return null;
 
-  // Check if already in wishlist
-  const existing = await prisma.wishlist.findUnique({
+  // Use upsert to prevent race conditions (atomic operation)
+  const wishlistItem = await prisma.wishlist.upsert({
     where: {
       userId_productId: { userId, productId },
     },
-  });
-
-  if (existing) {
-    // Return existing item
-    const fullItem = await prisma.wishlist.findUnique({
-      where: { id: existing.id },
-      include: {
-        product: {
-          include: {
-            storeProducts: {
-              where: { store: { isActive: true } },
-              orderBy: { price: "asc" },
-              take: 1,
-              include: { store: true },
-            },
-          },
-        },
-      },
-    });
-
-    if (!fullItem) return null;
-
-    const lowestStoreProduct = fullItem.product.storeProducts[0];
-    return {
-      id: fullItem.id,
-      productId: fullItem.productId,
-      productName: fullItem.product.name,
-      productNameAr: fullItem.product.nameAr,
-      productImage: fullItem.product.image,
-      productSlug: fullItem.product.slug,
-      brand: fullItem.product.brand,
-      category: fullItem.product.category,
-      lowestPrice: lowestStoreProduct ? Number(lowestStoreProduct.price) : undefined,
-      currency: lowestStoreProduct?.currency,
-      storeName: lowestStoreProduct?.store.name,
-      inStock: lowestStoreProduct?.inStock,
-      addedAt: fullItem.createdAt,
-    };
-  }
-
-  // Create new wishlist item
-  const wishlistItem = await prisma.wishlist.create({
-    data: { userId, productId },
+    create: { userId, productId },
+    update: {}, // No update needed, just return existing
     include: {
       product: {
         include: {
@@ -202,19 +161,20 @@ export async function removeFromWishlist(
   userId: string,
   productId: string
 ): Promise<boolean> {
-  const existing = await prisma.wishlist.findUnique({
-    where: {
-      userId_productId: { userId, productId },
-    },
-  });
+  try {
+    // Use deleteMany with compound key to prevent race conditions
+    // This is atomic and won't throw if the item doesn't exist
+    const result = await prisma.wishlist.deleteMany({
+      where: {
+        userId,
+        productId,
+      },
+    });
 
-  if (!existing) return false;
-
-  await prisma.wishlist.delete({
-    where: { id: existing.id },
-  });
-
-  return true;
+    return result.count > 0;
+  } catch {
+    return false;
+  }
 }
 
 // Check if product is in wishlist
@@ -301,37 +261,26 @@ export async function bulkAddToWishlist(
   userId: string,
   productIds: string[]
 ): Promise<{ added: number; skipped: number }> {
-  let added = 0;
-  let skipped = 0;
+  // First, verify which products exist
+  const validProducts = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+    select: { id: true },
+  });
+  const validProductIds = new Set(validProducts.map((p) => p.id));
 
-  for (const productId of productIds) {
-    const existing = await prisma.wishlist.findUnique({
-      where: {
-        userId_productId: { userId, productId },
-      },
-    });
+  // Filter to only valid product IDs
+  const productsToAdd = productIds.filter((id) => validProductIds.has(id));
 
-    if (existing) {
-      skipped++;
-      continue;
-    }
+  // Use createMany with skipDuplicates to prevent race conditions
+  // This is atomic and efficiently handles duplicates
+  const result = await prisma.wishlist.createMany({
+    data: productsToAdd.map((productId) => ({ userId, productId })),
+    skipDuplicates: true,
+  });
 
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-    });
+  const skipped = productIds.length - result.count;
 
-    if (!product) {
-      skipped++;
-      continue;
-    }
-
-    await prisma.wishlist.create({
-      data: { userId, productId },
-    });
-    added++;
-  }
-
-  return { added, skipped };
+  return { added: result.count, skipped };
 }
 
 // Clear wishlist

@@ -310,17 +310,27 @@ describe("Store Reviews Service", () => {
         "@/lib/services/store-reviews"
       );
 
-      vi.mocked(prisma.reviewHelpful.findUnique).mockResolvedValue(null);
-
-      vi.mocked(prisma.$transaction).mockResolvedValue([{}, {}]);
-
-      vi.mocked(prisma.storeReview.findUnique).mockResolvedValue({
-        helpfulCount: 1,
-      } as any);
+      // Transaction callback pattern - mock executes the callback with the prisma client
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+        if (typeof callback === "function") {
+          // Mock the transaction context
+          const tx = {
+            reviewHelpful: {
+              create: vi.fn().mockResolvedValue({ id: "h1" }),
+            },
+            storeReview: {
+              update: vi.fn().mockResolvedValue({ helpfulCount: 1 }),
+            },
+          };
+          return callback(tx);
+        }
+        return [{}];
+      });
 
       const result = await markReviewHelpful("u1", "r1");
 
       expect(result.success).toBe(true);
+      expect(result.helpfulCount).toBe(1);
     });
 
     it("should return false if already marked", async () => {
@@ -329,9 +339,10 @@ describe("Store Reviews Service", () => {
         "@/lib/services/store-reviews"
       );
 
-      vi.mocked(prisma.reviewHelpful.findUnique).mockResolvedValue({
-        id: "existing",
-      } as any);
+      // Simulate unique constraint violation
+      vi.mocked(prisma.$transaction).mockRejectedValue(
+        new Error("Unique constraint failed")
+      );
 
       vi.mocked(prisma.storeReview.findUnique).mockResolvedValue({
         helpfulCount: 5,
@@ -340,6 +351,7 @@ describe("Store Reviews Service", () => {
       const result = await markReviewHelpful("u1", "r1");
 
       expect(result.success).toBe(false);
+      expect(result.helpfulCount).toBe(5);
     });
   });
 

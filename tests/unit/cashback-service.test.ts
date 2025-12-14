@@ -219,9 +219,15 @@ describe("Cashback Service", () => {
   });
 
   describe("updateCashbackStatus", () => {
-    it("should update transaction status", async () => {
+    it("should update transaction status when admin", async () => {
       const { prisma } = await import("@/lib/prisma");
       const { updateCashbackStatus } = await import("@/lib/services/cashback");
+
+      // Mock admin user check
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: "admin1",
+        role: "ADMIN",
+      } as any);
 
       vi.mocked(prisma.cashbackTransaction.update).mockResolvedValue({
         id: "t1",
@@ -232,7 +238,7 @@ describe("Cashback Service", () => {
         paidAt: null,
       } as any);
 
-      const transaction = await updateCashbackStatus("t1", CashbackStatus.APPROVED);
+      const transaction = await updateCashbackStatus("t1", CashbackStatus.APPROVED, "admin1");
 
       expect(transaction.status).toBe(CashbackStatus.APPROVED);
     });
@@ -240,6 +246,12 @@ describe("Cashback Service", () => {
     it("should set paidAt when status is PAID", async () => {
       const { prisma } = await import("@/lib/prisma");
       const { updateCashbackStatus } = await import("@/lib/services/cashback");
+
+      // Mock admin user check
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: "admin1",
+        role: "ADMIN",
+      } as any);
 
       const paidDate = new Date();
       vi.mocked(prisma.cashbackTransaction.update).mockResolvedValue({
@@ -251,7 +263,7 @@ describe("Cashback Service", () => {
         paidAt: paidDate,
       } as any);
 
-      await updateCashbackStatus("t1", CashbackStatus.PAID);
+      await updateCashbackStatus("t1", CashbackStatus.PAID, "admin1");
 
       expect(prisma.cashbackTransaction.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -261,6 +273,20 @@ describe("Cashback Service", () => {
           }),
         })
       );
+    });
+
+    it("should throw error if not admin", async () => {
+      const { prisma } = await import("@/lib/prisma");
+      const { updateCashbackStatus } = await import("@/lib/services/cashback");
+
+      // Mock non-admin user check
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: "user1",
+        role: "USER",
+      } as any);
+
+      await expect(updateCashbackStatus("t1", CashbackStatus.APPROVED, "user1"))
+        .rejects.toThrow("Unauthorized");
     });
   });
 
