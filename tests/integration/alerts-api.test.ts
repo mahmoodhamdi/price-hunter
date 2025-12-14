@@ -19,6 +19,7 @@ vi.mock("@/lib/prisma", () => ({
       findFirst: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       delete: vi.fn(),
       count: vi.fn(),
     },
@@ -297,6 +298,7 @@ describe("Price Alert Notification Logic", () => {
       {
         id: "alert1",
         targetPrice: 100,
+        currency: Currency.SAR,
         isActive: true,
         triggered: false,
         notifyEmail: true,
@@ -313,7 +315,7 @@ describe("Price Alert Notification Logic", () => {
       },
     ] as any);
 
-    vi.mocked(prisma.priceAlert.update).mockResolvedValue({} as any);
+    vi.mocked(prisma.priceAlert.updateMany).mockResolvedValue({ count: 1 });
 
     // Console log spy to verify email sending
     const consoleSpy = vi.spyOn(console, "log");
@@ -335,6 +337,7 @@ describe("Price Alert Notification Logic", () => {
       {
         id: "alert1",
         targetPrice: 100,
+        currency: Currency.SAR,
         isActive: true,
         triggered: false,
         notifyEmail: false,
@@ -351,7 +354,7 @@ describe("Price Alert Notification Logic", () => {
       },
     ] as any);
 
-    vi.mocked(prisma.priceAlert.update).mockResolvedValue({} as any);
+    vi.mocked(prisma.priceAlert.updateMany).mockResolvedValue({ count: 1 });
 
     const consoleSpy = vi.spyOn(console, "log");
 

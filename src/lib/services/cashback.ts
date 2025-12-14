@@ -164,8 +164,19 @@ export async function createCashbackTransaction(data: {
 // Update cashback transaction status (admin function)
 export async function updateCashbackStatus(
   transactionId: string,
-  status: CashbackStatus
+  status: CashbackStatus,
+  adminUserId: string
 ): Promise<CashbackTransaction> {
+  // CRITICAL: Verify admin role before allowing status update
+  const admin = await prisma.user.findUnique({
+    where: { id: adminUserId },
+    select: { role: true },
+  });
+
+  if (!admin || admin.role !== "ADMIN") {
+    throw new Error("Unauthorized: Admin access required to update cashback status");
+  }
+
   const transaction = await prisma.cashbackTransaction.update({
     where: { id: transactionId },
     data: {

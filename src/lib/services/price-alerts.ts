@@ -288,7 +288,8 @@ export async function checkAndTriggerAlerts(): Promise<{
     },
   });
 
-  let triggered = 0;
+  // Collect alerts that need to be triggered
+  const alertsToTrigger: typeof alerts = [];
 
   for (const alert of alerts) {
     const lowestPrice = alert.product.storeProducts[0];
@@ -298,44 +299,69 @@ export async function checkAndTriggerAlerts(): Promise<{
     const targetPrice = Number(alert.targetPrice);
 
     if (currentPrice <= targetPrice) {
-      // Price dropped below target - trigger alert
-      await prisma.priceAlert.update({
-        where: { id: alert.id },
-        data: {
-          triggered: true,
-          triggeredAt: new Date(),
-        },
-      });
+      alertsToTrigger.push(alert);
+    }
+  }
 
-      // Send notifications (in a real app, this would queue jobs)
-      if (alert.notifyEmail && alert.user.email) {
-        await sendPriceAlertEmail({
+  if (alertsToTrigger.length === 0) {
+    return {
+      checked: alerts.length,
+      triggered: 0,
+    };
+  }
+
+  // Batch update all triggered alerts (fixes N+1 query)
+  const alertIdsToTrigger = alertsToTrigger.map((a) => a.id);
+  await prisma.priceAlert.updateMany({
+    where: { id: { in: alertIdsToTrigger } },
+    data: {
+      triggered: true,
+      triggeredAt: new Date(),
+    },
+  });
+
+  // Send notifications in parallel (in a real app, this would queue jobs)
+  const notificationPromises = alertsToTrigger.map(async (alert) => {
+    const lowestPrice = alert.product.storeProducts[0];
+    const currentPrice = Number(lowestPrice.price);
+    const targetPrice = Number(alert.targetPrice);
+
+    const promises: Promise<void>[] = [];
+
+    if (alert.notifyEmail && alert.user.email) {
+      promises.push(
+        sendPriceAlertEmail({
           email: alert.user.email,
           productName: alert.product.name,
           targetPrice,
           currentPrice,
           currency: alert.currency,
           productImage: alert.product.image,
-        });
-      }
+        })
+      );
+    }
 
-      if (alert.notifyTelegram && alert.user.telegramId) {
-        await sendPriceAlertTelegram({
+    if (alert.notifyTelegram && alert.user.telegramId) {
+      promises.push(
+        sendPriceAlertTelegram({
           telegramId: alert.user.telegramId,
           productName: alert.product.name,
           targetPrice,
           currentPrice,
           currency: alert.currency,
-        });
-      }
-
-      triggered++;
+        })
+      );
     }
-  }
+
+    return Promise.all(promises);
+  });
+
+  // Wait for all notifications (but don't fail if some fail)
+  await Promise.allSettled(notificationPromises);
 
   return {
     checked: alerts.length,
-    triggered,
+    triggered: alertsToTrigger.length,
   };
 }
 

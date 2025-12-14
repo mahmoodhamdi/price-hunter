@@ -8,12 +8,15 @@ vi.mock("@/lib/prisma", () => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
       create: vi.fn(),
+      upsert: vi.fn(),
+      createMany: vi.fn(),
       delete: vi.fn(),
       deleteMany: vi.fn(),
       count: vi.fn(),
     },
     product: {
       findUnique: vi.fn(),
+      findMany: vi.fn(),
     },
   },
 }));
@@ -132,9 +135,7 @@ describe("Wishlist Service", () => {
         name: "iPhone 15",
       } as any);
 
-      vi.mocked(prisma.wishlist.findUnique).mockResolvedValue(null);
-
-      vi.mocked(prisma.wishlist.create).mockResolvedValue({
+      vi.mocked(prisma.wishlist.upsert).mockResolvedValue({
         id: "w1",
         productId: "p1",
         createdAt: new Date(),
@@ -153,6 +154,7 @@ describe("Wishlist Service", () => {
 
       expect(result).toBeDefined();
       expect(result?.productName).toBe("iPhone 15");
+      expect(prisma.wishlist.upsert).toHaveBeenCalled();
     });
 
     it("should return existing item if already in wishlist", async () => {
@@ -164,27 +166,25 @@ describe("Wishlist Service", () => {
         name: "iPhone 15",
       } as any);
 
-      vi.mocked(prisma.wishlist.findUnique)
-        .mockResolvedValueOnce({ id: "existing" } as any)
-        .mockResolvedValueOnce({
-          id: "existing",
-          productId: "p1",
-          createdAt: new Date(),
-          product: {
-            name: "iPhone 15",
-            nameAr: null,
-            image: null,
-            slug: "iphone-15",
-            brand: null,
-            category: null,
-            storeProducts: [],
-          },
-        } as any);
+      // Upsert returns the existing item
+      vi.mocked(prisma.wishlist.upsert).mockResolvedValue({
+        id: "existing",
+        productId: "p1",
+        createdAt: new Date(),
+        product: {
+          name: "iPhone 15",
+          nameAr: null,
+          image: null,
+          slug: "iphone-15",
+          brand: null,
+          category: null,
+          storeProducts: [],
+        },
+      } as any);
 
       const result = await addToWishlist("user1", "p1");
 
       expect(result?.id).toBe("existing");
-      expect(prisma.wishlist.create).not.toHaveBeenCalled();
     });
 
     it("should return null for non-existent product", async () => {
@@ -204,22 +204,22 @@ describe("Wishlist Service", () => {
       const { prisma } = await import("@/lib/prisma");
       const { removeFromWishlist } = await import("@/lib/services/wishlist");
 
-      vi.mocked(prisma.wishlist.findUnique).mockResolvedValue({
-        id: "w1",
-      } as any);
-
-      vi.mocked(prisma.wishlist.delete).mockResolvedValue({} as any);
+      // Now uses deleteMany atomically
+      vi.mocked(prisma.wishlist.deleteMany).mockResolvedValue({ count: 1 });
 
       const result = await removeFromWishlist("user1", "p1");
 
       expect(result).toBe(true);
+      expect(prisma.wishlist.deleteMany).toHaveBeenCalledWith({
+        where: { userId: "user1", productId: "p1" },
+      });
     });
 
     it("should return false if not in wishlist", async () => {
       const { prisma } = await import("@/lib/prisma");
       const { removeFromWishlist } = await import("@/lib/services/wishlist");
 
-      vi.mocked(prisma.wishlist.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.wishlist.deleteMany).mockResolvedValue({ count: 0 });
 
       const result = await removeFromWishlist("user1", "p1");
 

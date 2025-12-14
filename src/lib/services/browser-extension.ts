@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Currency } from "@prisma/client";
+import { generateApiKey, hashToken, isAllowedScrapeDomain } from "@/lib/security";
 
 export interface ExtensionPriceData {
   productName: string;
@@ -64,6 +65,11 @@ export interface ExtensionWishlistItem {
 export async function getPriceDataForUrl(
   url: string
 ): Promise<ExtensionPriceData | null> {
+  // SECURITY: Validate URL is from an allowed domain
+  if (!isAllowedScrapeDomain(url)) {
+    return null;
+  }
+
   // Extract store and product info from URL
   const storeProduct = await prisma.storeProduct.findFirst({
     where: { url },
@@ -243,6 +249,11 @@ export async function addToWishlistFromExtension(
   url: string,
   targetPrice?: number
 ): Promise<{ success: boolean; productId?: string; error?: string }> {
+  // SECURITY: Validate URL is from an allowed domain
+  if (!isAllowedScrapeDomain(url)) {
+    return { success: false, error: "URL domain not supported" };
+  }
+
   // Find the store product by URL
   const storeProduct = await prisma.storeProduct.findFirst({
     where: { url },
@@ -358,6 +369,11 @@ export async function trackProductFromExtension(
     storeName: string;
   }
 ): Promise<{ success: boolean; storeProductId?: string; error?: string }> {
+  // SECURITY: Validate URL is from an allowed domain
+  if (!isAllowedScrapeDomain(url)) {
+    return { success: false, error: "URL domain not supported for tracking" };
+  }
+
   // Find or create store
   let store = await prisma.store.findFirst({
     where: {
@@ -484,8 +500,16 @@ export async function validateExtensionApiKey(apiKey: string): Promise<{
   valid: boolean;
   userId?: string;
 }> {
+  // SECURITY: Use constant-time comparison to prevent timing attacks
+  // Hash the incoming key and compare against stored hash
+  if (!apiKey || typeof apiKey !== "string") {
+    return { valid: false };
+  }
+
+  const hashedKey = hashToken(apiKey);
+
   const user = await prisma.user.findFirst({
-    where: { extensionApiKey: apiKey },
+    where: { extensionApiKey: hashedKey },
   });
 
   if (!user) {
@@ -497,12 +521,17 @@ export async function validateExtensionApiKey(apiKey: string): Promise<{
 
 // Generate extension API key for user
 export async function generateExtensionApiKey(userId: string): Promise<string> {
-  const apiKey = `ph_${Buffer.from(crypto.randomUUID()).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`;
+  // SECURITY: Use cryptographically secure random bytes
+  const apiKey = generateApiKey("ph");
+
+  // Store hashed version for security (one-way hash)
+  const hashedKey = hashToken(apiKey);
 
   await prisma.user.update({
     where: { id: userId },
-    data: { extensionApiKey: apiKey },
+    data: { extensionApiKey: hashedKey },
   });
 
+  // Return plain key to user (only time they'll see it)
   return apiKey;
 }

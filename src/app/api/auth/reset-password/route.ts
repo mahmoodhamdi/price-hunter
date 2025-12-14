@@ -1,29 +1,62 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
+import {
+  checkRateLimit,
+  getClientIp,
+  RATE_LIMITS,
+  rateLimitResponse,
+} from "@/lib/rate-limit";
+import { hashToken, checkPasswordStrength } from "@/lib/security";
 
-export async function POST(request: Request) {
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Token is required"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+export async function POST(request: NextRequest) {
   try {
-    const { token, password } = await request.json();
+    const ip = getClientIp(request);
 
-    if (!token || !password) {
+    // Rate limit by IP
+    const ipLimit = checkRateLimit(
+      `reset-password:ip:${ip}`,
+      RATE_LIMITS.AUTH_LOGIN
+    );
+    if (!ipLimit.success) {
+      return rateLimitResponse(ipLimit.resetTime);
+    }
+
+    const body = await request.json();
+
+    // Validate input
+    const result = resetPasswordSchema.safeParse(body);
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Token and password are required" },
+        { error: result.error.errors[0]?.message || "Invalid input" },
         { status: 400 }
       );
     }
 
-    if (password.length < 8) {
+    const { token, password } = result.data;
+
+    // Check password strength
+    const passwordCheck = checkPasswordStrength(password);
+    if (!passwordCheck.valid) {
       return NextResponse.json(
-        { error: "Password must be at least 8 characters" },
+        { error: passwordCheck.errors[0] },
         { status: 400 }
       );
     }
+
+    // Hash the incoming token to compare with stored hash
+    const hashedToken = hashToken(token);
 
     // Find user with valid token
     const user = await prisma.user.findFirst({
       where: {
-        resetToken: token,
+        resetToken: hashedToken,
         resetTokenExpiry: {
           gt: new Date(),
         },

@@ -9,6 +9,7 @@ vi.mock("@/lib/prisma", () => ({
       findFirst: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       delete: vi.fn(),
       count: vi.fn(),
     },
@@ -264,6 +265,7 @@ describe("Price Alerts Service", () => {
         {
           id: "alert1",
           targetPrice: 100,
+          currency: Currency.SAR,
           isActive: true,
           triggered: false,
           notifyEmail: true,
@@ -280,14 +282,17 @@ describe("Price Alerts Service", () => {
         },
       ] as any);
 
-      vi.mocked(prisma.priceAlert.update).mockResolvedValue({} as any);
+      vi.mocked(prisma.priceAlert.updateMany).mockResolvedValue({ count: 1 });
 
       const result = await checkAndTriggerAlerts();
 
       expect(result.checked).toBe(1);
       expect(result.triggered).toBe(1);
-      expect(prisma.priceAlert.update).toHaveBeenCalledWith(
+      expect(prisma.priceAlert.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: expect.objectContaining({
+            id: { in: ["alert1"] },
+          }),
           data: expect.objectContaining({
             triggered: true,
           }),

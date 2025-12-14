@@ -6,28 +6,68 @@ import {
   fetchProductFromUrl,
 } from "@/lib/services/product-fetch";
 import { Country } from "@prisma/client";
+import {
+  checkRateLimit,
+  getClientIp,
+  RATE_LIMITS,
+  rateLimitResponse,
+} from "@/lib/rate-limit";
+import {
+  isAllowedScrapeDomain,
+  sanitizeSearchQuery,
+  validateNumericBounds,
+} from "@/lib/security";
 
 const MIN_RESULTS_THRESHOLD = 3;
+const MAX_PAGE_SIZE = 100;
 
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const query = searchParams.get("q");
-  const country = (searchParams.get("country") || "SA") as Country;
-  const page = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "20");
-  const fresh = searchParams.get("fresh") === "true";
-  const store = searchParams.get("store");
-
-  if (!query) {
-    return NextResponse.json(
-      { error: "Search query is required" },
-      { status: 400 }
-    );
-  }
-
   try {
+    // Rate limit by IP
+    const ip = getClientIp(request);
+    const rateLimit = checkRateLimit(`search:ip:${ip}`, RATE_LIMITS.SEARCH);
+    if (!rateLimit.success) {
+      return rateLimitResponse(rateLimit.resetTime);
+    }
+
+    const searchParams = request.nextUrl.searchParams;
+    const rawQuery = searchParams.get("q");
+    const country = (searchParams.get("country") || "SA") as Country;
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
+    const pageSize = validateNumericBounds(
+      parseInt(searchParams.get("pageSize") || "20") || 20,
+      1,
+      MAX_PAGE_SIZE
+    );
+    const fresh = searchParams.get("fresh") === "true";
+    const store = searchParams.get("store");
+
+    if (!rawQuery) {
+      return NextResponse.json(
+        { error: "Search query is required" },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize and validate query
+    const query = sanitizeSearchQuery(rawQuery);
+    if (!query || query.length < 2) {
+      return NextResponse.json(
+        { error: "Search query must be at least 2 characters" },
+        { status: 400 }
+      );
+    }
+
     // Check if query is a URL
     if (isValidUrl(query)) {
+      // SECURITY: Validate URL is from an allowed domain to prevent SSRF
+      if (!isAllowedScrapeDomain(query)) {
+        return NextResponse.json(
+          { error: "URL domain not supported for scraping" },
+          { status: 400 }
+        );
+      }
+
       const domain = extractDomain(query);
 
       // Find product by URL in store_products
@@ -60,7 +100,7 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Not found in DB - auto-scrape from URL
+      // Not found in DB - auto-scrape from URL (already validated above)
       const scrapeResult = await fetchProductFromUrl(query);
       if (scrapeResult.productId) {
         const product = await prisma.product.findUnique({

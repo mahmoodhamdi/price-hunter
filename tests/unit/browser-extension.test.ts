@@ -452,18 +452,38 @@ describe("Browser Extension Service", () => {
         id: "sp1",
       } as any);
 
+      // Use allowed domain for SSRF validation
       const result = await trackProductFromExtension(
-        "https://newstore.com/product/123",
+        "https://extra.com/product/123",
         {
           name: "Product",
           price: 100,
           currency: Currency.SAR,
-          storeName: "New Store",
+          storeName: "Extra",
         }
       );
 
       expect(result.success).toBe(true);
       expect(prisma.store.create).toHaveBeenCalled();
+    });
+
+    it("should reject URL from non-allowed domain", async () => {
+      const { trackProductFromExtension } = await import(
+        "@/lib/services/browser-extension"
+      );
+
+      const result = await trackProductFromExtension(
+        "https://malicious-site.com/product/123",
+        {
+          name: "Product",
+          price: 100,
+          currency: Currency.SAR,
+          storeName: "Malicious",
+        }
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("not supported");
     });
   });
 
@@ -473,13 +493,18 @@ describe("Browser Extension Service", () => {
       const { validateExtensionApiKey } = await import(
         "@/lib/services/browser-extension"
       );
+      const { hashToken } = await import("@/lib/security");
+
+      // Store the hashed version, validation will hash the input and compare
+      const apiKey = "ph_test123456789";
+      const hashedKey = hashToken(apiKey);
 
       vi.mocked(prisma.user.findFirst).mockResolvedValue({
         id: "user1",
-        extensionApiKey: "valid-key",
+        extensionApiKey: hashedKey,
       } as any);
 
-      const result = await validateExtensionApiKey("valid-key");
+      const result = await validateExtensionApiKey(apiKey);
 
       expect(result.valid).toBe(true);
       expect(result.userId).toBe("user1");
@@ -501,7 +526,7 @@ describe("Browser Extension Service", () => {
   });
 
   describe("generateExtensionApiKey", () => {
-    it("should generate and store API key", async () => {
+    it("should generate and store hashed API key", async () => {
       const { prisma } = await import("@/lib/prisma");
       const { generateExtensionApiKey } = await import(
         "@/lib/services/browser-extension"
@@ -511,12 +536,14 @@ describe("Browser Extension Service", () => {
 
       const apiKey = await generateExtensionApiKey("user1");
 
+      // The returned key starts with ph_
       expect(apiKey).toMatch(/^ph_/);
+      // But the stored key is a hash (64 hex characters)
       expect(prisma.user.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: "user1" },
           data: expect.objectContaining({
-            extensionApiKey: expect.stringMatching(/^ph_/),
+            extensionApiKey: expect.stringMatching(/^[a-f0-9]{64}$/),
           }),
         })
       );

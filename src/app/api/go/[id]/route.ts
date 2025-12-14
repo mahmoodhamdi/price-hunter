@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateAffiliateUrl, trackAffiliateClick } from "@/lib/services/affiliate";
+import { isAllowedScrapeDomain } from "@/lib/security";
 
 export async function GET(
   request: NextRequest,
@@ -59,7 +60,8 @@ export async function GET(
       select: { url: true },
     });
 
-    if (storeProduct) {
+    // SECURITY: Validate URL before redirecting to prevent open redirect
+    if (storeProduct && isAllowedScrapeDomain(storeProduct.url)) {
       return NextResponse.redirect(storeProduct.url);
     }
 
