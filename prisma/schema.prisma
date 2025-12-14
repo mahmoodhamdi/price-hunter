@@ -25,6 +25,10 @@ model User {
   image         String?
   role          Role      @default(USER)
 
+  // Password reset
+  resetToken       String?
+  resetTokenExpiry DateTime?
+
   wishlist Wishlist[]
   alerts   PriceAlert[]
   searches SearchHistory[]
