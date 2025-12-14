@@ -42,6 +42,7 @@ model User {
   updatedAt            DateTime              @updatedAt
   affiliateClicks      AffiliateClick[]
   cashbackTransactions CashbackTransaction[]
+  stockNotifications   StockNotification[]
 
   @@map("users")
 }
@@ -176,7 +177,9 @@ model StoreProduct {
   rating        Decimal? @db.Decimal(2, 1)
   reviewCount   Int?
 
-  priceHistory PriceHistory[]
+  priceHistory       PriceHistory[]
+  stockNotifications StockNotification[]
+  stockHistory       StockHistory[]
 
   lastScraped DateTime @default(now())
   createdAt   DateTime @default(now())
@@ -395,4 +398,40 @@ enum CashbackStatus {
   APPROVED
   PAID
   REJECTED
+}
+
+// ============================================
+// Stock Notifications
+// ============================================
+
+model StockNotification {
+  id             String  @id @default(cuid())
+  userId         String
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeProductId String
+  storeProduct   StoreProduct @relation(fields: [storeProductId], references: [id], onDelete: Cascade)
+
+  isActive       Boolean   @default(true)
+  notifyEmail    Boolean   @default(true)
+  notifyPush     Boolean   @default(false)
+  lastNotifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, storeProductId])
+  @@index([isActive])
+  @@map("stock_notifications")
+}
+
+model StockHistory {
+  id             String       @id @default(cuid())
+  storeProductId String
+  storeProduct   StoreProduct @relation(fields: [storeProductId], references: [id], onDelete: Cascade)
+
+  inStock   Boolean
+  checkedAt DateTime @default(now())
+
+  @@index([storeProductId, checkedAt])
+  @@map("stock_history")
 }
