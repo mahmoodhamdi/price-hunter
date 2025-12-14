@@ -45,6 +45,7 @@ model User {
   stockNotifications   StockNotification[]
   storeReviews         StoreReview[]
   reviewHelpful        ReviewHelpful[]
+  barcodeScans         BarcodeScan[]
 
   @@map("users")
 }
@@ -154,6 +155,7 @@ model Product {
   alerts          PriceAlert[]
   searches        SearchHistory[]
   affiliateClicks AffiliateClick[]
+  barcodeScans    BarcodeScan[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -484,4 +486,23 @@ model ReviewHelpful {
 
   @@unique([userId, reviewId])
   @@map("review_helpful")
+}
+
+// ============================================
+// Barcode Scanner
+// ============================================
+
+model BarcodeScan {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  barcode   String
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  scannedAt DateTime @default(now())
+
+  @@index([userId, scannedAt])
+  @@index([barcode])
+  @@map("barcode_scans")
 }
