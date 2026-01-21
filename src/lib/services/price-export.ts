@@ -28,7 +28,7 @@ export interface ExportOptions {
 }
 
 export interface ExportResult {
-  data: string | Buffer;
+  data: string;
   filename: string;
   mimeType: string;
   recordCount: number;

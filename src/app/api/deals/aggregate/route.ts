@@ -61,13 +61,14 @@ export async function GET(request: NextRequest) {
         deals = await getClearanceDeals(limit);
         break;
 
-      case "drops":
+      case "drops": {
         const hours = parseInt(searchParams.get("hours") || "24");
         const minDrop = parseInt(searchParams.get("minDrop") || "10");
         deals = await getPriceDrops(hours, minDrop, limit);
         break;
+      }
 
-      case "store":
+      case "store": {
         const storeId = searchParams.get("storeId");
         if (!storeId) {
           return NextResponse.json(
@@ -77,8 +78,9 @@ export async function GET(request: NextRequest) {
         }
         deals = await getDealsByStore(storeId, limit);
         break;
+      }
 
-      case "category":
+      case "category": {
         const category = searchParams.get("category");
         if (!category) {
           return NextResponse.json(
@@ -88,6 +90,7 @@ export async function GET(request: NextRequest) {
         }
         deals = await getDealsByCategory(category, limit);
         break;
+      }
 
       case "best":
         deals = await getBestDeals(currency || Currency.SAR, limit);
@@ -101,12 +104,13 @@ export async function GET(request: NextRequest) {
         deals = await getNewLowestPrices(limit);
         break;
 
-      case "trending":
+      case "trending": {
         const trendingHours = parseInt(searchParams.get("hours") || "24");
         deals = await getTrendingDeals(trendingHours, limit);
         break;
+      }
 
-      case "personalized":
+      case "personalized": {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
           return NextResponse.json(
@@ -116,6 +120,7 @@ export async function GET(request: NextRequest) {
         }
         deals = await getPersonalizedDeals(session.user.id, limit);
         break;
+      }
 
       case "search":
         if (!query) {
@@ -127,9 +132,10 @@ export async function GET(request: NextRequest) {
         deals = await searchDeals(query, filter, limit);
         break;
 
-      case "summary":
+      case "summary": {
         const summary = await getDealSummary();
         return NextResponse.json({ summary });
+      }
 
       default:
         deals = await getDeals(filter, limit, offset);

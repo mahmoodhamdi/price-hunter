@@ -15,7 +15,7 @@ npm run db:generate      # Generate Prisma client
 npm run db:migrate       # Run migrations (dev mode)
 npm run db:push          # Push schema without migrations
 npm run db:seed          # Seed database
-npm run db:studio        # Open Prisma Studio GUI
+npm run db:studio        # Open Prisma Studio GUI (localhost:5555)
 
 # Testing
 npm run test             # Run unit tests (Vitest)
@@ -29,6 +29,12 @@ npm run test:e2e         # Run Playwright E2E tests
 npx vitest tests/unit/utils.test.ts          # Single unit test file
 npx vitest -t "test name"                    # Run test by name
 npx playwright test tests/e2e/auth.spec.ts   # Single E2E test
+```
+
+### Environment Setup
+```bash
+cp .env.example .env.local                   # Copy environment template
+docker-compose -f docker-compose.dev.yml up  # Start DB + Redis for local dev
 ```
 
 ## Architecture Overview
@@ -70,9 +76,10 @@ tests/
 ### Scraper Architecture
 - Base class: `src/lib/scrapers/base.ts` - defines `ScrapedProduct` interface and common methods
 - Store implementations extend `BaseScraper` with `scrapeProduct(url)` and `searchProducts(query)` methods
-- Factory function `getScraperForStore(slug)` returns cached scraper instances
+- Factory function `getScraperForStore(slug)` in `index.ts` returns cached scraper instances
 - `scrapeProductFromUrl(url)` auto-detects store from URL domain
 - URL validation via `isAllowedScrapeDomain()` in `src/lib/security.ts` prevents SSRF
+- Scrapers use random User-Agent rotation and exponential backoff for retries
 
 ### Services Layer
 Key services in `src/lib/services/`:
@@ -98,6 +105,24 @@ Key entities in `prisma/schema.prisma`:
 - Locales: `en`, `ar` (with RTL via `localeDirection` in config)
 - Config: `src/i18n/config.ts`
 - Translation files: `public/locales/{en,ar}.json`
+
+### Data Flow
+```
+Scraper (fetch HTML) → Services (business logic) → Prisma (database) → API Routes → Frontend
+```
+- `product-fetch.ts` orchestrates: scrape → normalize → save product → record price history
+- All prices normalized to USD via `ExchangeRate` table for comparison
+
+### Route Protection
+- Middleware (`src/middleware.ts`) protects `/dashboard/*` and `/admin/*`
+- `/dashboard/*` requires any authenticated user
+- `/admin/*` requires `role: ADMIN`
+
+### Testing
+- Unit tests: `tests/unit/*.test.ts` (Vitest + jsdom)
+- Integration tests: `tests/integration/*.test.ts` (API route testing)
+- E2E tests: `tests/e2e/*.spec.ts` (Playwright)
+- Setup file: `tests/setup.ts`
 
 ## Key Patterns
 
@@ -130,11 +155,13 @@ Endpoints at `/api/extension/*` require `x-api-key` header with user's `extensio
 - `GET /api/cron/update-rates` - Update exchange rates
 - Requires `x-cron-secret` header matching `CRON_SECRET` env var
 
-### Docker
-```bash
-docker-compose up -d                         # Start all services
-docker-compose -f docker-compose.dev.yml up  # Start only DB + Redis
-```
+### Adding a New Scraper
+1. Create `src/lib/scrapers/{store}.ts` extending `BaseScraper`
+2. Implement `scrapeProduct(url)` and `searchProducts(query)` methods
+3. Add store slug to `StoreSlug` type in `src/lib/scrapers/index.ts`
+4. Register in `getScraperForStore()` switch statement
+5. Add domain to `ALLOWED_SCRAPE_DOMAINS` in `src/lib/security.ts`
+6. Seed store entry in `prisma/seed.ts`
 
 ### Default Admin
 After seeding: `admin@pricehunter.com` / `Admin123!`

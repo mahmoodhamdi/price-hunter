@@ -208,7 +208,7 @@ export function SocialShare({
               </Button>
             </div>
 
-            {typeof navigator !== "undefined" && navigator.share && (
+            {"share" in navigator && (
               <Button onClick={handleNativeShare} className="w-full">
                 <Share2 className="h-4 w-4 mr-2" />
                 More sharing options

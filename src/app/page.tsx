@@ -190,8 +190,8 @@ function DealCard({
   deal: {
     id: string;
     discount: number | null;
-    price: unknown;
-    originalPrice: unknown;
+    price: number | { toNumber(): number };
+    originalPrice: number | { toNumber(): number } | null;
     currency: string;
     url: string;
     product: {
@@ -258,7 +258,7 @@ function ProductCard({
     slug: string;
     image: string | null;
     storeProducts: {
-      price: unknown;
+      price: number | { toNumber(): number };
       currency: string;
       store: {
         name: string;
