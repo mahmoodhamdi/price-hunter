@@ -249,8 +249,8 @@ describe("Compare Page API Integration", () => {
     });
 
     it("should handle empty URL params", () => {
-      const urlParams = "";
-      const productIds = urlParams ? urlParams.split(",") : [];
+      const urlParams: string = "";
+      const productIds = urlParams.length > 0 ? urlParams.split(",") : [];
 
       expect(productIds).toHaveLength(0);
     });

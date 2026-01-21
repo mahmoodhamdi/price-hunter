@@ -65,7 +65,7 @@ export class ExtraScraper extends BaseScraper {
         .slice(0, 500);
 
       // Extract SKU from URL
-      const skuMatch = url.match(/\/p\/([^\/]+)/);
+      const skuMatch = url.match(/\/p\/([^/]+)/);
       const barcode = skuMatch ? skuMatch[1] : undefined;
 
       return {

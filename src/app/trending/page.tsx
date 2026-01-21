@@ -6,13 +6,17 @@ import { TrendingUp } from "lucide-react";
 export default async function TrendingPage() {
   const t = await getTranslations();
 
+  // Compute date threshold for last 7 days
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
   // Get most searched products (based on search history)
   const trendingSearches = await prisma.searchHistory.groupBy({
     by: ["productId"],
     where: {
       productId: { not: null },
       createdAt: {
-        gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+        gte: sevenDaysAgo,
       },
     },
     _count: {

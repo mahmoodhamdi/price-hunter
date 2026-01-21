@@ -98,19 +98,19 @@ export async function getPriceDataForUrl(
     return null;
   }
 
-  const prices = storeProduct.priceHistory.map((h) => h.price);
-  const lowestPrice = prices.length > 0 ? Math.min(...prices) : storeProduct.price;
-  const highestPrice = prices.length > 0 ? Math.max(...prices) : storeProduct.price;
+  const prices = storeProduct.priceHistory.map((h) => Number(h.price));
+  const currentPrice = Number(storeProduct.price);
+  const lowestPrice = prices.length > 0 ? Math.min(...prices) : currentPrice;
+  const highestPrice = prices.length > 0 ? Math.max(...prices) : currentPrice;
   const averagePrice =
     prices.length > 0
       ? prices.reduce((a, b) => a + b, 0) / prices.length
-      : storeProduct.price;
+      : currentPrice;
 
   // Calculate price change from last recorded price
   let priceChange: ExtensionPriceData["priceChange"] = undefined;
   if (storeProduct.priceHistory.length >= 2) {
-    const previousPrice = storeProduct.priceHistory[1].price;
-    const currentPrice = storeProduct.price;
+    const previousPrice = Number(storeProduct.priceHistory[1].price);
     const amount = currentPrice - previousPrice;
     const percentage = Math.abs((amount / previousPrice) * 100);
 
@@ -125,14 +125,14 @@ export async function getPriceDataForUrl(
   const alternatives = storeProduct.product.storeProducts.map((sp) => ({
     storeName: sp.store.name,
     storeSlug: sp.store.slug,
-    price: sp.price,
+    price: Number(sp.price),
     url: sp.url,
     inStock: sp.inStock,
   }));
 
   return {
     productName: storeProduct.product.name,
-    currentPrice: storeProduct.price,
+    currentPrice,
     currency: storeProduct.currency,
     storeName: storeProduct.store.name,
     storeSlug: storeProduct.store.slug,
@@ -141,7 +141,7 @@ export async function getPriceDataForUrl(
     inStock: storeProduct.inStock,
     discount: storeProduct.discount,
     priceHistory: storeProduct.priceHistory.map((h) => ({
-      price: h.price,
+      price: Number(h.price),
       date: h.recordedAt.toISOString(),
     })),
     lowestPrice,
@@ -188,13 +188,13 @@ export async function extensionQuickSearch(
         image: product.image,
         brand: product.brand,
         category: product.category,
-        lowestPrice: lowestPriceStore.price,
+        lowestPrice: Number(lowestPriceStore.price),
         currency: lowestPriceStore.currency,
         storeCount: product.storeProducts.length,
         stores: product.storeProducts.map((sp) => ({
           name: sp.store.name,
           slug: sp.store.slug,
-          price: sp.price,
+          price: Number(sp.price),
           inStock: sp.inStock,
         })),
       };
@@ -227,8 +227,8 @@ export async function getExtensionWishlist(
 
   return wishlistItems.map((item) => {
     const lowestStore = item.product.storeProducts[0];
-    const currentPrice = lowestStore?.price || 0;
-    const previousPrice = lowestStore?.priceHistory[1]?.price;
+    const currentPrice = lowestStore ? Number(lowestStore.price) : 0;
+    const previousPrice = lowestStore?.priceHistory[1]?.price ? Number(lowestStore.priceHistory[1].price) : undefined;
     const hasDropped = previousPrice ? currentPrice < previousPrice : false;
 
     return {
@@ -237,7 +237,7 @@ export async function getExtensionWishlist(
       image: item.product.image,
       currentPrice,
       currency: lowestStore?.currency || Currency.SAR,
-      priceAlert: item.targetPrice || undefined,
+      priceAlert: item.targetPrice ? Number(item.targetPrice) : undefined,
       hasDropped,
     };
   });
@@ -347,12 +347,13 @@ export async function getQuickComparison(
   }
 
   const cheapest = bestMatch.storeProducts[0];
-  const savings = currentPrice - cheapest.price;
+  const cheapestPrice = Number(cheapest.price);
+  const savings = currentPrice - cheapestPrice;
 
   return {
     savings: Math.max(0, Math.round(savings * 100) / 100),
     cheapestStore: cheapest.store.name,
-    cheapestPrice: cheapest.price,
+    cheapestPrice,
     storeCount: bestMatch.storeProducts.length,
   };
 }

@@ -12,11 +12,61 @@ import {
   ReferenceLine,
   Area,
   AreaChart,
+  TooltipProps,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
-import { TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { TrendingDown, TrendingUp } from "lucide-react";
+import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
+
+// Custom tooltip component for price charts
+interface CustomTooltipProps extends TooltipProps<ValueType, NameType> {
+  currency: string;
+}
+
+function PriceTooltip({ active, payload, label, currency }: CustomTooltipProps) {
+  if (active && payload && payload.length) {
+    const firstPayload = payload[0];
+    return (
+      <div className="bg-background border rounded-lg shadow-lg p-3">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="text-lg font-bold">
+          {formatPrice(Number(firstPayload.value), currency)}
+        </p>
+        {firstPayload.payload?.store && (
+          <p className="text-xs text-muted-foreground">
+            {String(firstPayload.payload.store)}
+          </p>
+        )}
+      </div>
+    );
+  }
+  return null;
+}
+
+function MultiStoreTooltip({ active, payload, label, currency }: CustomTooltipProps) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-background border rounded-lg shadow-lg p-3">
+        <p className="text-sm font-medium mb-2">{label}</p>
+        {payload.map((entry, index) => (
+          <div key={index} className="flex items-center gap-2 text-sm">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-muted-foreground">{String(entry.dataKey)}:</span>
+            <span className="font-medium">
+              {formatPrice(Number(entry.value), currency)}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
 
 interface PricePoint {
   date: string;
@@ -73,25 +123,6 @@ export function PriceHistoryChart({
       }),
     }));
   }, [data]);
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-background border rounded-lg shadow-lg p-3">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="text-lg font-bold">
-            {formatPrice(payload[0].value, currency)}
-          </p>
-          {payload[0].payload.store && (
-            <p className="text-xs text-muted-foreground">
-              {payload[0].payload.store}
-            </p>
-          )}
-        </div>
-      );
-    }
-    return null;
-  };
 
   if (data.length === 0) {
     return (
@@ -179,7 +210,7 @@ export function PriceHistoryChart({
                 width={80}
                 className="text-muted-foreground"
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={(props) => <PriceTooltip {...props} currency={currency} />} />
               {stats && (
                 <ReferenceLine
                   y={stats.average}
@@ -216,7 +247,7 @@ export function PriceHistoryChart({
                 width={80}
                 className="text-muted-foreground"
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={(props) => <PriceTooltip {...props} currency={currency} />} />
               {stats && (
                 <ReferenceLine
                   y={stats.average}
@@ -276,29 +307,6 @@ export function MultiStorePriceChart({
     }));
   }, [data]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-background border rounded-lg shadow-lg p-3">
-          <p className="text-sm font-medium mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex items-center gap-2 text-sm">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className="text-muted-foreground">{entry.dataKey}:</span>
-              <span className="font-medium">
-                {formatPrice(entry.value, currency)}
-              </span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
   if (data.length === 0) {
     return (
       <Card>
@@ -331,7 +339,7 @@ export function MultiStorePriceChart({
               width={80}
               className="text-muted-foreground"
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={(props) => <MultiStoreTooltip {...props} currency={currency} />} />
             {stores.map((store, index) => (
               <Line
                 key={store.name}
