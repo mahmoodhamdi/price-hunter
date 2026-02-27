@@ -1,0 +1,38 @@
+# ============================================
+# Price Hunter - Development Dockerfile
+# Hot reload enabled for development
+# ============================================
+
+FROM node:20-alpine
+
+# Install dependencies
+RUN apk add --no-cache libc6-compat openssl git curl
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json* ./
+COPY prisma ./prisma/
+
+# Install all dependencies (including devDependencies)
+RUN npm install
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Set environment
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Expose ports
+# 3000 - Next.js
+# 9229 - Node.js debugger
+# 5555 - Prisma Studio
+EXPOSE 3000 9229 5555
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health || exit 1
+
+# Start development server with hot reload
+CMD ["npm", "run", "dev"]

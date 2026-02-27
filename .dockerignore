@@ -1,47 +1,58 @@
+# ============================================
+# Price Hunter - Docker Ignore
+# Files excluded from Docker build context
+# ============================================
+
 # Dependencies
 node_modules
 npm-debug.log
+yarn-error.log
 
-# Next.js
+# Next.js build output
 .next
 out
+build
 
 # Testing
 coverage
 .nyc_output
+playwright-report
+test-results
 
-# Environment
+# Environment files (SECURITY)
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
-# IDE
+# IDE and Editor
 .idea
 .vscode
 *.swp
 *.swo
+*.sublime-*
+.editorconfig
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
-
-# Misc
 *.log
+
+# Documentation (keep README for reference)
 *.md
 !README.md
+docs
 
 # Git
 .git
 .gitignore
+.gitattributes
 
-# Docker
+# Docker files (don't need inside container)
 Dockerfile*
 docker-compose*
 .dockerignore
 
-# Tests
+# Tests (not needed in production)
 tests
 **/*.test.ts
 **/*.test.tsx
@@ -49,3 +60,34 @@ tests
 **/*.spec.tsx
 playwright.config.ts
 vitest.config.ts
+jest.config.*
+
+# Config files not needed in production
+.eslintrc*
+eslint.config.*
+.prettierrc*
+tsconfig.test.json
+CLAUDE.md
+
+# Local development
+.turbo
+*.local
+
+# Nginx config (mounted separately)
+nginx
+
+# Scripts (except production scripts)
+scripts/*.sh
+!scripts/start.sh
+!scripts/init-db.sql
+
+# Temporary files
+tmp
+temp
+*.tmp
+*.temp
+
+# Cache directories
+.cache
+.npm
+.pnpm-store
