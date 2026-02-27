@@ -1,32 +1,123 @@
+# ============================================
+# Price Hunter - Development Docker Compose
+# For local development with hot reload
+# ============================================
+
 version: '3.8'
 
-# Development compose file - only runs database and redis
-# Run with: docker-compose -f docker-compose.dev.yml up
-
 services:
+  # ===========================================
+  # Next.js Development Server
+  # ===========================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: price-hunter-dev
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Node.js debugger
+      - "5555:5555"  # Prisma Studio
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/price_hunter?schema=public
+      - REDIS_URL=redis://redis:6379
+      - NEXTAUTH_SECRET=dev-secret-change-in-production
+      - NEXTAUTH_URL=http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - price-hunter-dev
+    restart: unless-stopped
+
+  # ===========================================
+  # PostgreSQL Database
+  # ===========================================
   db:
     image: postgres:16-alpine
+    container_name: price-hunter-db-dev
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: pricehunter
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=price_hunter
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_dev_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - price-hunter-dev
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d price_hunter"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
+  # ===========================================
+  # Redis Cache
+  # ===========================================
   redis:
     image: redis:7-alpine
+    container_name: price-hunter-redis-dev
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - redis_dev_data:/data
+    networks:
+      - price-hunter-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ===========================================
+  # Prisma Studio (optional)
+  # ===========================================
+  prisma-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: price-hunter-studio
+    command: ["npx", "prisma", "studio"]
+    ports:
+      - "5556:5555"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/price_hunter?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - price-hunter-dev
+    profiles:
+      - studio
+
+  # ===========================================
+  # Mailhog (Email testing)
+  # ===========================================
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: price-hunter-mailhog
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - price-hunter-dev
+    profiles:
+      - email
+
+networks:
+  price-hunter-dev:
+    driver: bridge
 
 volumes:
-  postgres_data:
-  redis_data:
+  postgres_dev_data:
+  redis_dev_data:
