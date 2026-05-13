@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=400" />
+  <title>Price Hunter</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>Price Hunter</h1>
+    <span id="status" class="muted">Loading…</span>
+  </header>
+
+  <main>
+    <section id="not-signed-in" hidden>
+      <p>Sign in on the website to enable alerts and your wishlist.</p>
+      <a id="open-site" class="btn" href="https://pricehunter.app/login" target="_blank" rel="noopener">Open Price Hunter</a>
+    </section>
+
+    <section id="signed-in" hidden>
+      <form id="search-form">
+        <input id="q" type="search" placeholder="Search products…" autocomplete="off" />
+        <button type="submit">Search</button>
+      </form>
+
+      <div id="results" class="results"></div>
+
+      <div id="current-product" class="card" hidden>
+        <p class="muted">This page looks like a supported product.</p>
+        <button id="add-wishlist" class="btn">Add to wishlist</button>
+        <button id="create-alert" class="btn">Set price alert</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <a href="https://pricehunter.app" target="_blank" rel="noopener">pricehunter.app</a>
+    <span>·</span>
+    <a id="open-settings" href="#">Settings</a>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

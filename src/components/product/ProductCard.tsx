@@ -7,6 +7,8 @@ import { Heart, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatPrice, cn } from "@/lib/utils";
+import { PriceTrendBadge } from "./PriceTrendBadge";
+import type { PriceTrend } from "@/lib/services/price-trend";
 
 interface StoreProduct {
   price: unknown; // Prisma Decimal or number
@@ -33,6 +35,8 @@ interface ProductCardProps {
   locale?: string;
   onWishlistClick?: (productId: string) => void;
   isInWishlist?: boolean;
+  /** Optional price-trend analysis to render the lowest-ever / drop badge. */
+  priceTrend?: PriceTrend;
 }
 
 export function ProductCard({
@@ -40,6 +44,7 @@ export function ProductCard({
   locale = "en",
   onWishlistClick,
   isInWishlist = false,
+  priceTrend,
 }: ProductCardProps) {
   const t = useTranslations();
 
@@ -84,6 +89,16 @@ export function ProductCard({
           {hasDiscount && (
             <div className="absolute top-2 left-2 px-2 py-1 text-xs font-bold bg-destructive text-destructive-foreground rounded">
               -{lowestPriceProduct.discount}%
+            </div>
+          )}
+
+          {/* Price-trend Badge (Phase 6 differentiation) */}
+          {priceTrend && (
+            <div className="absolute bottom-2 left-2">
+              <PriceTrendBadge
+                trend={priceTrend}
+                locale={locale === "ar" ? "ar" : "en"}
+              />
             </div>
           )}
 
