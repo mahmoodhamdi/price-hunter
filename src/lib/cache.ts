@@ -118,15 +118,15 @@ export async function cacheDeletePattern(pattern: string): Promise<boolean> {
 }
 
 // Wrapper for cache-aside pattern.
-// In test envs we bypass the cache so unit/integration tests see the
-// authoritative result of every invocation (no stale fixture data and no
-// false negatives on assertions like "expected fn to be called once").
+// Set PH_DISABLE_CACHE=1 to bypass entirely (useful for chaos tests or
+// for integration tests that mock the underlying data layer and need
+// fetchFn to run on every invocation).
 export async function withCache<T>(
   key: string,
   fetchFn: () => Promise<T>,
   ttlSeconds: number = CACHE_CONFIG.ttl.medium
 ): Promise<T> {
-  if (process.env.NODE_ENV === "test" || process.env.PH_DISABLE_CACHE === "1") {
+  if (process.env.PH_DISABLE_CACHE === "1") {
     return fetchFn();
   }
 
