@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getInitials } from "@/lib/utils";
 import { useState } from "react";
+import { EditionBadge } from "./EditionBadge";
 
 export function Header() {
   const t = useTranslations();
@@ -59,6 +60,9 @@ export function Header() {
             {t("app.name")}
           </span>
         </Link>
+
+        {/* Edition badge — visible only for non-default editions */}
+        <EditionBadge />
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
