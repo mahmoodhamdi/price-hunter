@@ -1,0 +1,17 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "react/no-unescaped-entities": "off",
+    "@next/next/no-img-element": "off"
+  },
+  "ignorePatterns": [
+    ".next/",
+    "node_modules/",
+    "landing-pages/",
+    "extension/",
+    "tests/e2e/",
+    "playwright-report/",
+    "test-results/",
+    "coverage/"
+  ]
+}
