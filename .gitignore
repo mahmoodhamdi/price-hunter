@@ -75,3 +75,9 @@ test-results
 
 # Vitest
 vitest.config.ts.timestamp*
+
+# Sales sprint working state — not for buyers
+.sales-prep/
+
+# Edition-specific production builds
+.next-builds/

@@ -17,12 +17,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { isSafeRedirectUrl } from "@/lib/security";
 
 export default function LoginPage() {
   const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const rawCallbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = isSafeRedirectUrl(rawCallbackUrl)
+    ? rawCallbackUrl
+    : "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
