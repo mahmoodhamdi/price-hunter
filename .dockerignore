@@ -67,7 +67,6 @@ jest.config.*
 eslint.config.*
 .prettierrc*
 tsconfig.test.json
-CLAUDE.md
 
 # Local development
 .turbo
