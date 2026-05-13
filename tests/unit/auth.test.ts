@@ -123,13 +123,13 @@ describe("Auth Module", () => {
           currency: "SAR",
         };
 
-        const result = await sessionCallback({
+        const result = (await sessionCallback({
           session: session as any,
           token: token as any,
           user: {} as any,
           trigger: "update",
           newSession: null,
-        } as any);
+        } as any)) as { user: { id: string; role: string; country: string; currency: string } };
 
         expect(result.user.id).toBe("user-1");
         expect(result.user.role).toBe("ADMIN");
