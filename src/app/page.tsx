@@ -7,11 +7,16 @@ import { ArrowRight, TrendingUp, Percent, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatPrice } from "@/lib/utils";
+import {
+  analyzePriceTrend,
+  type PriceTrend,
+} from "@/lib/services/price-trend";
+import { PriceTrendBadge } from "@/components/product/PriceTrendBadge";
 
 export default async function HomePage() {
   const t = await getTranslations();
 
-  // Fetch deals (products with discounts)
+  // Fetch deals (products with discounts) + price history for trend badges.
   const deals = await prisma.storeProduct.findMany({
     where: {
       discount: { gte: 10 },
@@ -21,10 +26,30 @@ export default async function HomePage() {
     include: {
       product: true,
       store: true,
+      priceHistory: {
+        orderBy: { recordedAt: "desc" },
+        take: 90,
+      },
     },
     orderBy: { discount: "desc" },
     take: 4,
   });
+
+  // Compute one PriceTrend per deal so the home page can render lowest-ever
+  // / drop-% badges in the deal grid.
+  const dealTrends = new Map<string, PriceTrend>();
+  for (const deal of deals) {
+    dealTrends.set(
+      deal.id,
+      analyzePriceTrend(
+        Number(deal.price),
+        deal.priceHistory.map((h) => ({
+          price: Number(h.price),
+          recordedAt: h.recordedAt,
+        }))
+      )
+    );
+  }
 
   // Fetch recently added products
   const newProducts = await prisma.product.findMany({
@@ -100,7 +125,11 @@ export default async function HomePage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {deals.map((deal) => (
-              <DealCard key={deal.id} deal={deal} />
+              <DealCard
+                key={deal.id}
+                deal={deal}
+                trend={dealTrends.get(deal.id)}
+              />
             ))}
           </div>
         </section>
@@ -186,7 +215,9 @@ function FeatureCard({
 
 function DealCard({
   deal,
+  trend,
 }: {
+  trend?: PriceTrend;
   deal: {
     id: string;
     discount: number | null;
@@ -226,6 +257,11 @@ function DealCard({
             <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs font-bold px-2 py-1 rounded">
               -{deal.discount}%
             </span>
+          )}
+          {trend && (
+            <div className="absolute bottom-2 left-2">
+              <PriceTrendBadge trend={trend} />
+            </div>
           )}
         </div>
         <CardContent className="p-4">

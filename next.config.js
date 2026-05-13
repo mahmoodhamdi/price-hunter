@@ -77,6 +77,17 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'btech.com',
       },
+      // Demo-data image hosts (used by prisma/seed-demo.ts). Safe placeholder
+      // services. Buyers replacing demo data with real product images can
+      // trim these entries.
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+      },
     ],
   },
   experimental: {
