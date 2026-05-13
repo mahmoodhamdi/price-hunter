@@ -2,6 +2,9 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Percent } from "lucide-react";
+import { DealsGrid } from "./DealsGrid";
+
+const HOT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export default async function DealsPage() {
   const t = await getTranslations();
@@ -11,12 +14,8 @@ export default async function DealsPage() {
     where: {
       storeProducts: {
         some: {
-          discount: {
-            gte: 10, // At least 10% off
-          },
-          store: {
-            isActive: true,
-          },
+          discount: { gte: 10 },
+          store: { isActive: true },
         },
       },
     },
@@ -33,6 +32,31 @@ export default async function DealsPage() {
     take: 24,
   });
 
+  // Pre-compute filterable metadata server-side so the client filter
+  // band has cheap numbers to filter on.
+  const cutoff = Date.now() - HOT_WINDOW_MS;
+  const enriched = dealsProducts.map((product) => {
+    const discounts = product.storeProducts.map((sp) => Number(sp.discount) || 0);
+    const ratings = product.storeProducts
+      .map((sp) => Number(sp.rating) || 0)
+      .filter((r) => r > 0);
+    const minDiscount = discounts.length ? Math.max(...discounts) : 0;
+    const rating = ratings.length ? Math.max(...ratings) : 0;
+    const inStockCount = product.storeProducts.filter((sp) => sp.inStock).length;
+    const totalStores = product.storeProducts.length;
+    const isHotDeal = product.storeProducts.some(
+      (sp) => new Date(sp.lastScraped).getTime() > cutoff
+    );
+    return {
+      id: product.id,
+      minDiscount,
+      rating,
+      inStockCount,
+      totalStores,
+      isHotDeal,
+    };
+  });
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center gap-3 mb-8">
@@ -41,11 +65,25 @@ export default async function DealsPage() {
       </div>
 
       {dealsProducts.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {dealsProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <DealsGrid
+          products={dealsProducts.map((p) => ({
+            id: p.id,
+            name: p.name,
+            nameAr: p.nameAr,
+            slug: p.slug,
+            image: p.image,
+            brand: p.brand,
+            storeProducts: p.storeProducts.map((sp) => ({
+              price: Number(sp.price),
+              originalPrice: sp.originalPrice ? Number(sp.originalPrice) : undefined,
+              currency: sp.currency,
+              discount: sp.discount,
+              inStock: sp.inStock,
+              store: { name: sp.store.name, nameAr: sp.store.nameAr },
+            })),
+          }))}
+          filterables={enriched}
+        />
       ) : (
         <div className="text-center py-16">
           <Percent className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
