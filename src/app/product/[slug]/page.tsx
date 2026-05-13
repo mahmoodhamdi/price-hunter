@@ -5,9 +5,13 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { PriceComparison } from "@/components/product/PriceComparison";
 import { PriceHistory } from "@/components/product/PriceHistory";
+import { CouponHint } from "@/components/product/CouponHint";
+import { PriceTrendBadge } from "@/components/product/PriceTrendBadge";
+import { analyzePriceTrend } from "@/lib/services/price-trend";
+import { getCrossCountryQuotes } from "@/lib/services/cross-country-compare";
 import { formatPrice } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingDown, TrendingUp, Minus, Store } from "lucide-react";
+import { TrendingDown, TrendingUp, Minus, Store, Globe } from "lucide-react";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -82,6 +86,37 @@ export default async function ProductPage({ params }: ProductPageProps) {
     prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
 
   const currency = product.storeProducts[0]?.currency || "SAR";
+
+  // Differentiation enrichments (Phase 6 wiring)
+  const cheapestStoreProduct = product.storeProducts[0];
+  const priceTrend = cheapestStoreProduct
+    ? analyzePriceTrend(
+        Number(cheapestStoreProduct.price),
+        cheapestStoreProduct.priceHistory.map((h) => ({
+          price: Number(h.price),
+          recordedAt: h.recordedAt,
+        }))
+      )
+    : null;
+
+  const storeIdsForCoupons = product.storeProducts.map((sp) => sp.storeId);
+  const activeCoupons =
+    storeIdsForCoupons.length > 0
+      ? await prisma.coupon.findMany({
+          where: {
+            storeId: { in: storeIdsForCoupons },
+            isActive: true,
+            OR: [
+              { endDate: null },
+              { endDate: { gte: new Date() } },
+            ],
+          },
+          orderBy: { isFeatured: "desc" },
+          take: 5,
+        })
+      : [];
+
+  const crossCountryQuotes = await getCrossCountryQuotes(slug);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -163,13 +198,68 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </Card>
           </div>
 
+          {/* Trend badge */}
+          {priceTrend && (
+            <div className="mb-4">
+              <PriceTrendBadge trend={priceTrend} />
+            </div>
+          )}
+
           {/* Store Count */}
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-4">
             {t("stores.title")}: {product.storeProducts.length}{" "}
             {product.storeProducts.length === 1 ? "store" : "stores"}
           </p>
+
+          {/* Coupon hint */}
+          {activeCoupons.length > 0 && (
+            <div className="mb-4">
+              <CouponHint coupons={activeCoupons} />
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Cross-country compare */}
+      {crossCountryQuotes.length > 1 && (
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="h-5 w-5 text-primary" />
+              <h2 className="font-semibold">Compare across countries</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {crossCountryQuotes.map((q) => (
+                <a
+                  key={q.country}
+                  href={q.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border rounded-lg p-3 hover:bg-muted transition-colors block"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xl" aria-hidden>
+                      {q.flag}
+                    </span>
+                    <span className="text-sm font-medium">{q.countryName}</span>
+                  </div>
+                  <p className="text-lg font-bold">
+                    {formatPrice(q.localPrice, q.currency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    ${q.usdPrice.toFixed(2)} · {q.storeName}
+                  </p>
+                  {!q.inStock && (
+                    <p className="text-xs text-destructive mt-1">
+                      out of stock
+                    </p>
+                  )}
+                </a>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Price Comparison Table */}
       <div className="mb-8">
