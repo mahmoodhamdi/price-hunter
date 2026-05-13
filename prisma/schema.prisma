@@ -166,6 +166,8 @@ model Product {
 
   @@index([name])
   @@index([barcode])
+  @@index([updatedAt])
+  @@index([category])
   @@map("products")
 }
 
@@ -199,6 +201,8 @@ model StoreProduct {
   @@index([priceUSD])
   @@index([url])
   @@index([storeId, inStock])
+  @@index([discount, inStock])
+  @@index([updatedAt])
   @@map("store_products")
 }
 
