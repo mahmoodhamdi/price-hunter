@@ -32,6 +32,11 @@ model User {
   // Browser extension
   extensionApiKey String? @unique
 
+  // Public wishlist share token (Phase 6 — viral mechanic). When set, the
+  // user's wishlist is viewable at /share/wishlist/<token> by anyone with
+  // the link. Generated on demand from /api/wishlist/share.
+  wishlistShareToken String? @unique
+
   wishlist Wishlist[]
   alerts   PriceAlert[]
   searches SearchHistory[]

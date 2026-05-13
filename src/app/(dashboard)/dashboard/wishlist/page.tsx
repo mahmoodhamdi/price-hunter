@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Heart } from "lucide-react";
+import { WishlistShareButton } from "@/components/dashboard/WishlistShareButton";
 
 export default async function WishlistPage() {
   const session = await getServerSession(authOptions);
@@ -33,9 +34,12 @@ export default async function WishlistPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center gap-3 mb-8">
-        <Heart className="h-8 w-8 text-destructive" />
-        <h1 className="text-3xl font-bold">{t("wishlist.title")}</h1>
+      <div className="flex items-center justify-between gap-3 mb-8 flex-wrap">
+        <div className="flex items-center gap-3">
+          <Heart className="h-8 w-8 text-destructive" />
+          <h1 className="text-3xl font-bold">{t("wishlist.title")}</h1>
+        </div>
+        {wishlistItems.length > 0 && <WishlistShareButton />}
       </div>
 
       {wishlistItems.length > 0 ? (
