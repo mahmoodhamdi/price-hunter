@@ -94,10 +94,22 @@ export async function generateAffiliateUrl(
 }
 
 /**
- * Hash IP address for privacy
+ * Hash IP address for privacy. Throws if IP_SALT is unset (must fail
+ * fast — an empty salt removes the privacy guarantee entirely).
  */
 function hashIp(ip: string): string {
-  return crypto.createHash("sha256").update(ip + process.env.IP_SALT || "").digest("hex").substring(0, 16);
+  const salt = process.env.IP_SALT;
+  if (!salt) {
+    throw new Error(
+      "IP_SALT environment variable is required for IP hashing. " +
+        "Generate one with: openssl rand -hex 32"
+    );
+  }
+  return crypto
+    .createHash("sha256")
+    .update(`${ip}:${salt}`)
+    .digest("hex")
+    .substring(0, 16);
 }
 
 /**

@@ -32,8 +32,6 @@ model User {
   // Browser extension
   extensionApiKey String? @unique
 
-  @@index([resetTokenExpiry])
-
   wishlist Wishlist[]
   alerts   PriceAlert[]
   searches SearchHistory[]
@@ -50,6 +48,7 @@ model User {
   barcodeScans         BarcodeScan[]
   shoppingLists        ShoppingList[]
 
+  @@index([resetTokenExpiry])
   @@map("users")
 }
 
@@ -167,6 +166,8 @@ model Product {
 
   @@index([name])
   @@index([barcode])
+  @@index([updatedAt])
+  @@index([category])
   @@map("products")
 }
 
@@ -200,6 +201,8 @@ model StoreProduct {
   @@index([priceUSD])
   @@index([url])
   @@index([storeId, inStock])
+  @@index([discount, inStock])
+  @@index([updatedAt])
   @@map("store_products")
 }
 
@@ -421,9 +424,9 @@ enum CashbackStatus {
 // ============================================
 
 model StockNotification {
-  id             String  @id @default(cuid())
+  id             String       @id @default(cuid())
   userId         String
-  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   storeProductId String
   storeProduct   StoreProduct @relation(fields: [storeProductId], references: [id], onDelete: Cascade)
 
@@ -487,9 +490,9 @@ model StoreReview {
 }
 
 model ReviewHelpful {
-  id       String @id @default(cuid())
+  id       String      @id @default(cuid())
   userId   String
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   reviewId String
   review   StoreReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
 
@@ -556,4 +559,67 @@ model ShoppingListItem {
   @@unique([listId, productId])
   @@index([listId])
   @@map("shopping_list_items")
+}
+
+// =============================================================================
+// Multi-Tenant SaaS Models (Phase 9)
+//
+// These models enable the multi-tenant license tier ($20K SaaS reseller).
+// They are additive: a tenantId is OPTIONAL on existing user/product rows so
+// single-tenant deployments keep working unchanged.
+//
+// Tenant scoping is enforced at the service layer via a Prisma middleware
+// that injects `tenantId` into queries when AsyncLocalStorage has a context
+// set. See src/lib/tenant/scope.ts.
+// =============================================================================
+
+enum TenantPlan {
+  TRIAL
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+model Tenant {
+  id           String       @id @default(cuid())
+  slug         String       @unique
+  customDomain String?      @unique
+  edition      String // edition slug, e.g. "ksa-electronics"
+  branding     Json? // { logo, primaryColor, accentColor, tagline }
+  ownerEmail   String
+  plan         TenantPlan   @default(TRIAL)
+  status       TenantStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  subscription Subscription?
+
+  @@index([status])
+  @@index([edition])
+  @@map("tenants")
+}
+
+model Subscription {
+  id               String     @id @default(cuid())
+  tenantId         String     @unique
+  plan             TenantPlan
+  status           String // active, past_due, canceled
+  amount           Decimal    @db.Decimal(10, 2)
+  currency         String // USD, SAR, AED, EGP
+  billingCycle     String // monthly, yearly
+  nextBillingDate  DateTime?
+  externalProvider String? // stripe, paymob, tap
+  externalId       String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
 }

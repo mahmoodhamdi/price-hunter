@@ -6,10 +6,14 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const country = searchParams.get("country") as Country | null;
-    const limit = parseInt(searchParams.get("limit") || "20");
-    const minDiscount = parseInt(searchParams.get("minDiscount") || "10");
+    // Cap limit and minDiscount to prevent unbounded queries / silly inputs.
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "20"), 1), 100);
+    const minDiscount = Math.min(
+      Math.max(parseInt(searchParams.get("minDiscount") || "10"), 0),
+      100
+    );
     const category = searchParams.get("category") || undefined;
-    const type = searchParams.get("type") || "deals"; // deals or price-drops
+    const type = searchParams.get("type") || "deals";
 
     if (type === "price-drops") {
       const priceDrops = await getPriceDrops({

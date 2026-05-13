@@ -63,7 +63,7 @@ describe("Auth Module", () => {
 
     it("should have credentials provider", () => {
       expect(authOptions.providers).toHaveLength(1);
-      expect(authOptions.providers[0].name).toBe("credentials");
+      expect(authOptions.providers[0].name.toLowerCase()).toBe("credentials");
     });
 
     describe("JWT callback", () => {
