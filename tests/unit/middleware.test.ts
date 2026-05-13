@@ -66,7 +66,7 @@ describe("Middleware Configuration", () => {
       await import("@/middleware");
 
       const call = vi.mocked(withAuth).mock.calls[0];
-      const options = call[1] as any;
+      const options = (call as unknown as unknown[])[1] as any;
       const authorized = options.callbacks.authorized;
 
       // Unauthenticated user trying to access /dashboard
@@ -82,7 +82,7 @@ describe("Middleware Configuration", () => {
       await import("@/middleware");
 
       const call = vi.mocked(withAuth).mock.calls[0];
-      const options = call[1] as any;
+      const options = (call as unknown as unknown[])[1] as any;
       const authorized = options.callbacks.authorized;
 
       const result = authorized({
@@ -97,7 +97,7 @@ describe("Middleware Configuration", () => {
       await import("@/middleware");
 
       const call = vi.mocked(withAuth).mock.calls[0];
-      const options = call[1] as any;
+      const options = (call as unknown as unknown[])[1] as any;
       const authorized = options.callbacks.authorized;
 
       const result = authorized({
@@ -112,7 +112,7 @@ describe("Middleware Configuration", () => {
       await import("@/middleware");
 
       const call = vi.mocked(withAuth).mock.calls[0];
-      const options = call[1] as any;
+      const options = (call as unknown as unknown[])[1] as any;
       const authorized = options.callbacks.authorized;
 
       const result = authorized({
@@ -127,7 +127,7 @@ describe("Middleware Configuration", () => {
       await import("@/middleware");
 
       const call = vi.mocked(withAuth).mock.calls[0];
-      const options = call[1] as any;
+      const options = (call as unknown as unknown[])[1] as any;
       const authorized = options.callbacks.authorized;
 
       const result = authorized({
@@ -142,7 +142,7 @@ describe("Middleware Configuration", () => {
       await import("@/middleware");
 
       const call = vi.mocked(withAuth).mock.calls[0];
-      const options = call[1] as any;
+      const options = (call as unknown as unknown[])[1] as any;
       const authorized = options.callbacks.authorized;
 
       // Public routes
@@ -161,7 +161,7 @@ describe("Middleware Configuration", () => {
       await import("@/middleware");
 
       const call = vi.mocked(withAuth).mock.calls[0];
-      const options = call[1] as any;
+      const options = (call as unknown as unknown[])[1] as any;
       const authorized = options.callbacks.authorized;
 
       const result = authorized({
